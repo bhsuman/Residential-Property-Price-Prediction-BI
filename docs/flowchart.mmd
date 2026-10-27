@@ -1,0 +1,54 @@
+flowchart TD
+    %% =====================================================================
+    %% COMP8811 Assignment 2 — User & Program Execution Flowcharts
+    %% (A) Offline Training, Cross-Validation & Evaluation Program Flow
+    %% (B) Online User Flow: Live Predictor (Tab 1) & BI Dashboard (Tab 2/3)
+    %% =====================================================================
+
+    subgraph PROG_FLOW["A. Program Flow: Leak-Free ETL, Model Training, 5-Fold CV & Conformal Calibration"]
+        P1(["Start Offline Pipeline: python -m src.etl_pipeline && python -m src.ml_models"])
+        P2["Read Raw CSVs: melbourne_house_prices_less.csv (63,023) + melbourne_housing_full.csv (34,857)"]
+        P3["Remove 3 Exact Duplicates & Merge 34,855 Cross-CSV Overlaps via 7-Key RecordKey"]
+        P4["Apply 10 Explicit Outlier & Anomaly Rules (504 Physical Fixed/Masked · 57 Price Outliers Dropped)"]
+        P5["Separate Priced Sales (27,192) vs. Unpriced Listings (7,607 → Fact_UnseenProperty)"]
+        P6["Deterministic 80/20 Split (random_state=42): 21,753 Train | 5,439 Holdout Test"]
+        P7["Fit 5-Tier Hierarchical Median Imputers & Past-Only Market Medians Strictly on Train (21,753)"]
+        P8["Compute 5-Fold Out-of-Fold Empirical Bayes Target Encoding (Suburb, Suburb×Type, Suburb×Type×Rooms)"]
+        P9["Fit ColumnTransformer on X_train (27 Numeric + 49 One-Hot = 76 Features) & Log1p Target Wrapper"]
+        P10["Tune XGBoost, Random Forest & Decision Tree via 5-Fold RandomizedSearchCV on Train"]
+        P11["Generate 5-Fold Out-of-Fold Predictions (21,753 Train) & Holdout Test Predictions (5,439 Test)"]
+        P12["Calibrate Dwelling-Type Stratified Split Conformal Quantiles q95 on OOF Log-Residuals (95.26% Test Coverage)"]
+        P13["Compute Holdout Metrics (R², MAE, RMSE, MAPE), 95% Bootstrap CIs & Residual Diagnostics by Price Band"]
+        P14(["Persist Star Schema DB (property_star_schema.db), 4 Models (models/*.joblib) & JSON/CSV Audit Reports"])
+
+        P1 --> P2 --> P3 --> P4 --> P5 --> P6 --> P7 --> P8 --> P9 --> P10 --> P11 --> P12 --> P13 --> P14
+    end
+
+    subgraph USER_FLOW["B. Interactive User Flow: Property Valuation Predictor, BI Dashboard & Pipeline Audit"]
+        U0(["User Opens Web Application at http://127.0.0.1:5000"])
+        U_NAV{"Select Navigation Tab"}
+
+        %% Tab 1 Flow
+        T1_START["Tab 1: Property Valuation (Live Predictor)"]
+        T1_INPUT["Click Sample Profile (Richmond 3B House / South Yarra 2B Unit / Kew 4B Residence)<br/>OR Adjust 9 Property Specifications (Region, Suburb, Type, Beds, Baths, Cars, Land, Floor, YearBuilt)"]
+        T1_API["POST /api/predict → Build 31-Feature Vector from Train-Only Suburb Profiles"]
+        T1_SHAP["Score All 4 Models + Compute Exact XGBoost TreeSHAP (pred_contribs=True) + Conformal 95% Interval"]
+        T1_RENDER["Render Champion Valuation Card, Conformal Interval Tooltip, 4 BI Metrics,<br/>Dynamic 5-Category TreeSHAP Chart (Local/Global Toggle), Cross-Model Chart & 8 Out-of-Sample Comps"]
+
+        %% Tab 2 Flow
+        T2_START["Tab 2: BI Decision Support Dashboard"]
+        T2_FILTER["Select Evaluation Split (Default: Holdout Test = 5,439 | Train 5-Fold OOF = 21,753 | All Out-of-Sample = 27,192)<br/>& Apply Cross-Filters (Region, Dwelling Type, Bedrooms, Price Ceiling, Unseen Search/Sort)"]
+        T2_API["GET /api/dashboard → Execute Parameterized SQLite Star Schema OLAP Queries"]
+        T2_RENDER["Update 4 Out-of-Sample KPI Cards, Regional & Quarterly Price Charts,<br/>45° Parity Scatter Plot, Error by Type/Rooms Chart & 7,607 Unseen Same-Type Comparison Table"]
+
+        %% Tab 3 Flow
+        T3_START["Tab 3: Models & Star Schema Pipeline"]
+        T3_ACT["Inspect 4 Model Benchmark Cards (Holdout R², 5-Fold CV R² ± SD, MAE, RMSE, MAPE),<br/>Holdout Residual Diagnostics (Residuals vs Predicted, Error by Price Band & Region/Type),<br/>4-Panel ETL Data Quality Audit & Star Schema Table Browser"]
+        T3_DL["Click 'Download Data Quality Summary (CSV)' or 'Download Audit Report (JSON)'<br/>(GET /api/etl/quality-report?format=csv|json)"]
+
+        U0 --> U_NAV
+        U_NAV -->|"Tab 1"| T1_START --> T1_INPUT --> T1_API --> T1_SHAP --> T1_RENDER
+        U_NAV -->|"Tab 2"| T2_START --> T2_FILTER --> T2_API --> T2_RENDER
+        U_NAV -->|"Tab 3"| T3_START --> T3_ACT --> T3_DL
+    end
+

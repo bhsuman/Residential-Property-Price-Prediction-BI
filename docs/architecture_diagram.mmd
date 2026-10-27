@@ -1,0 +1,83 @@
+flowchart TD
+    %% =====================================================================
+    %% COMP8811 Assignment 2 — System Architecture Diagram
+    %% Residential Property Price Prediction & Star Schema BI System
+    %% =====================================================================
+
+    subgraph SOURCES["1. Raw Data Sources (data/raw/)"]
+        CSV_LESS["melbourne_house_prices_less.csv<br/>(63,023 rows × 13 cols · 380 Suburbs)"]
+        CSV_FULL["melbourne_housing_full.csv<br/>(34,857 rows × 21 cols · Physical & Spatial)"]
+        RBA_REF["RBA Macro Cash Rate Schedule<br/>(2016-Q1 to 2018-Q4: 2.00% → 1.50%)"]
+    end
+
+    subgraph ETL["2. Leak-Free ETL & Feature Engineering Pipeline (src/etl_pipeline.py)"]
+        DEDUP["Stage 2A: Deduplication & Cross-CSV Reconciliation<br/>(3 exact dups removed · 34,855 overlaps merged via 7-key RecordKey<br/>2 prices & 11 location fields backfilled)"]
+        OUTLIER["Stage 2B: Outlier & Anomaly Normalization<br/>(504 physical anomalies corrected/masked · 57 extreme price outliers dropped:<br/>Price < $120k [2] or > $5,043,024 [55])"]
+        SPLIT["Stage 2C: Chronological Sort & Deterministic 80/20 Split<br/>(random_state=42 BEFORE any imputation or target encoding:<br/>21,753 Train Sales | 5,439 Holdout Test Sales | 7,607 Unseen Listings)"]
+        IMPUTE["Stage 2D: Train-Only Hierarchical Median Imputation<br/>(5-tier BuildingArea, 4-tier Landsize, 3-tier YearBuilt fitted on Train only<br/>+ explicit *_was_imputed binary indicator flags)"]
+        FEAT["Stage 2E: Spatial, Temporal & Out-of-Fold Target Encoding<br/>(PropertyAge, FloorToLandRatio, Haversine RadialDistanceCBD, SaleYear, SaleQuarter,<br/>Past-Only PriorSuburbMedianPrice & 5-Fold KFold EB Target Encoding in log1p space)"]
+    end
+
+    subgraph DW["3. SQLite Dimensional Star Schema Data Warehouse (data/processed/property_star_schema.db)"]
+        FACT_SALE["Fact_PropertySale<br/>(27,192 Validated Sales · 5-Fold OOF & Holdout Predictions,<br/>AbsoluteError, PercentageError, DataSplit)"]
+        FACT_UNSEEN["Fact_UnseenProperty<br/>(7,607 Unpriced Listings · XGB & RF Valuations,<br/>Same-Suburb & Same-Type Benchmark)"]
+        DIM_PROP["Dim_Property<br/>(27,192 Physical Profiles:<br/>Type, Rooms, Bath, Car, Land, Floor, YearBuilt, Imputed Flags)"]
+        DIM_LOC["Dim_Location<br/>(381 Suburb Profiles:<br/>Region, CouncilArea, Postcode, DistanceCBD, Lat/Long)"]
+        DIM_DATE["Dim_Date<br/>(112 Calendar Settlement Dates:<br/>Day, Month, Quarter, Year, YearQuarter)"]
+        DIM_MKT["Dim_Market<br/>(96 Region × Quarter Snapshots:<br/>Past-Only PriorPeriodMedianPrice, MarketIndex, InterestRate)"]
+    end
+
+    subgraph ML["4. Supervised Regression Training & Calibration Suite (src/ml_models.py · models/*.joblib)"]
+        PREP["ColumnTransformer Preprocessor<br/>(27 Numeric [Median + StandardScaler] + 4 Categorical [OneHot] = 76 Cols<br/>+ TransformedTargetRegressor[log1p / expm1])"]
+        MOD_XGB["XGBoost Regressor (Champion)<br/>RandomizedSearchCV (5-Fold CV R² = 82.39% ± 0.51%)<br/>Holdout R² = 81.88% · MAE = $144,337 · MAPE = 13.37%"]
+        MOD_RF["Random Forest Regressor<br/>RandomizedSearchCV (5-Fold CV R² = 80.26% ± 0.35%)<br/>Holdout R² = 78.40% · MAE = $158,062 · MAPE = 14.60%"]
+        MOD_LR["Linear Regression (Log-Linear Baseline)<br/>5-Fold CV R² = 75.18% ± 1.07%<br/>Holdout R² = 74.19% · MAE = $181,931 · MAPE = 17.04%"]
+        MOD_DT["Decision Tree Regressor<br/>RandomizedSearchCV (5-Fold CV R² = 74.59% ± 0.58%)<br/>Holdout R² = 72.58% · MAE = $185,924 · MAPE = 17.35%"]
+        SHAP_CONF["Explainability & Uncertainty Calibration<br/>• Exact TreeSHAP (pred_contribs=True → 5 Hedonic Categories)<br/>• Split Conformal Intervals (95.26% Holdout Coverage)"]
+    end
+
+    subgraph API["5. Flask Prediction & OLAP BI Service Layer (src/abi_engine.py · src/web_app.py)"]
+        REST_PRED["POST /api/predict<br/>Real-time 4-Model Valuation, Conformal Interval,<br/>Dynamic TreeSHAP Decomposition & Out-of-Sample Comps"]
+        REST_BI["GET /api/dashboard<br/>Star Schema OLAP Cross-Filtering (Default: Holdout Test = 5,439)<br/>Regional, Quarterly, Parity Scatter, Error Matrix & Unseen Screening"]
+        REST_SYS["GET /api/ml · GET /api/etl · GET /api/etl/quality-report<br/>Model Benchmarks, Residual Slice Diagnostics, Star Schema Inspector<br/>& Downloadable Data-Quality Reports (CSV / JSON)"]
+    end
+
+    subgraph UI["6. Interactive 3-Tab Web Application UI (web/templates/dashboard.html · Plotly.js)"]
+        TAB1["Tab 1: Property Valuation (Live Predictor)<br/>Sample Profiles, 9 Hedonic Inputs, Champion Valuation Card,<br/>Split Conformal Tooltip, Local/Global TreeSHAP & Cross-Model Bars"]
+        TAB2["Tab 2: BI Decision Support Dashboard<br/>Train OOF / Holdout Test Split Toggle, 5 OLAP Slicers, 4 KPI Cards,<br/>2×2 Plotly Analytical Grid & 7,607 Unseen Same-Type Screening Table"]
+        TAB3["Tab 3: Models & Star Schema Pipeline<br/>4 Model Benchmark Cards, CV ± SD & MAPE Charts, Holdout Residual Diagnostics,<br/>4-Panel ETL Data Quality Audit, CSV/JSON Export & Star Schema Browser"]
+    end
+
+    CSV_LESS --> DEDUP
+    CSV_FULL --> DEDUP
+    RBA_REF --> FEAT
+    DEDUP --> OUTLIER --> SPLIT --> IMPUTE --> FEAT
+
+    FEAT --> FACT_SALE
+    FEAT --> FACT_UNSEEN
+    FEAT --> DIM_PROP
+    FEAT --> DIM_LOC
+    FEAT --> DIM_DATE
+    FEAT --> DIM_MKT
+
+    DIM_PROP --> FACT_SALE
+    DIM_LOC --> FACT_SALE
+    DIM_DATE --> FACT_SALE
+    DIM_MKT --> FACT_SALE
+
+    FACT_SALE --> PREP
+    PREP --> MOD_XGB & MOD_RF & MOD_LR & MOD_DT
+    MOD_XGB --> SHAP_CONF
+    MOD_XGB & MOD_RF & MOD_LR & MOD_DT --> FACT_SALE
+    MOD_XGB & MOD_RF --> FACT_UNSEEN
+
+    MOD_XGB & MOD_RF & MOD_LR & MOD_DT --> REST_PRED
+    SHAP_CONF --> REST_PRED
+    FACT_SALE & DIM_PROP & DIM_LOC & DIM_DATE & DIM_MKT --> REST_BI
+    FACT_UNSEEN --> REST_BI
+    FACT_SALE & FACT_UNSEEN --> REST_SYS
+
+    REST_PRED --> TAB1
+    REST_BI --> TAB2
+    REST_SYS --> TAB3
+

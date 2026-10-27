@@ -1,0 +1,45 @@
+Audit_Section,Item_or_Column,Rule_or_Status,Before_or_Affected_Count,Before_Pct,After_Priced_Count,After_Unseen_Count,Details_and_Methodology
+1_Row_Disposition_and_Deduplication,1. Raw Source Records Ingested (LESS + FULL),Input,97880,,,,"63,023 rows in melbourne_house_prices_less.csv + 34,857 rows in melbourne_housing_full.csv."
+1_Row_Disposition_and_Deduplication,2. Exact Duplicate Rows in LESS CSV,Dropped,2,,,,Identical duplicate rows across all 13 columns in melbourne_house_prices_less.csv.
+1_Row_Disposition_and_Deduplication,3. Exact Duplicate Rows in FULL CSV,Dropped,1,,,,Identical duplicate row across all 21 columns in melbourne_housing_full.csv.
+1_Row_Disposition_and_Deduplication,4. Cross-CSV Overlapping Transactions (LESS ∩ FULL),Merged / Deduplicated,34855,,,,Matched via 7-field RecordKey to backfill 2 missing prices and 11 missing location attributes in FULL without double-counting.
+1_Row_Disposition_and_Deduplication,5. LESS-Only Transactions (Macro Market Benchmark),Routed to Dim_Market,28166,,,,"Lacks physical property attributes (Bedrooms, Bathrooms, Landsize, BuildingArea, YearBuilt, Lat/Long); used strictly for past-only regional/suburb market indices."
+1_Row_Disposition_and_Deduplication,6. Unpriced Listings in FULL (Missing Target Price),Routed to Fact_UnseenProperty,7607,,,,Listings with no recorded sale price after cross-CSV lookup; separated for out-of-sample valuation scoring (never used in training).
+1_Row_Disposition_and_Deduplication,7. Extreme Price Tail Outliers (< $120k or > 99.8th pct),Dropped,57,,,,"Removed 2 nominal transfers (< $120,000) and 55 extreme luxury outliers (> $5,043,024) to stabilize regression loss."
+1_Row_Disposition_and_Deduplication,8. Final Validated Sales (Fact_PropertySale),"Retained (21,753 Train / 5,439 Test)",27192,,,,"Clean, complete residential sales split 80% Train (21,753) and 20% Holdout Test (5,439) prior to imputation and target encoding."
+2_Outlier_and_Anomaly_Rules,Price (Lower Tail),"Price < $120,000",2,,0,0,Dropped from Fact_PropertySale (nominal / non-arm's-length transfers)
+2_Outlier_and_Anomaly_Rules,Price (Upper 99.8th Percentile),"Price > $5,043,024 (99.8th percentile)",55,,0,0,Dropped from Fact_PropertySale (extreme luxury tail outliers)
+2_Outlier_and_Anomaly_Rules,YearBuilt (Entry Typos),YearBuilt == 1196 or YearBuilt == 2106,2,,0,0,"Corrected in-place (1196 → 1996, 2106 → 2016)"
+2_Outlier_and_Anomaly_Rules,YearBuilt (Implausible Era),YearBuilt < 1835 or YearBuilt > 2019,3,,0,0,Masked to NaN → Train-only Suburb×Type median + YearBuilt_was_imputed=1
+2_Outlier_and_Anomaly_Rules,BuildingArea (Zero / Extreme Floor Area),"BuildingArea < 15 sqm or BuildingArea > 1,500 sqm",167,,0,0,Masked to NaN → 5-tier Train-only hierarchical median + BuildingArea_was_imputed=1
+2_Outlier_and_Anomaly_Rules,Landsize (Zero-Land Houses),Landsize <= 0 sqm and Type == 'h' (House),222,,0,0,Masked to NaN → 4-tier Train-only hierarchical median + Landsize_was_imputed=1
+2_Outlier_and_Anomaly_Rules,Landsize (Extreme Acreage),"Landsize > 15,000 sqm",36,,0,0,"Winsorized (capped) at 15,000 sqm"
+2_Outlier_and_Anomaly_Rules,Bedroom2 (Invalid Count),Bedroom2 <= 0 or Bedroom2 > 10,21,,0,0,"Replaced with Rooms count clipped to [1, 10]"
+2_Outlier_and_Anomaly_Rules,Bathroom (Invalid Count),Bathroom <= 0 or Bathroom > 8,48,,0,0,"Masked to NaN → Train-only (Type, Rooms) median"
+2_Outlier_and_Anomaly_Rules,Car (Invalid Count),Car < 0 or Car > 10,5,,0,0,"Masked to NaN → Train-only (Type, Rooms) median"
+3_Column_Missing_Values_Before_After,Suburb,Raw FULL Missing: 0 (0.0%),0,0.0%,0,0,No missing values in raw FULL or LESS CSVs.
+3_Column_Missing_Values_Before_After,Address,Raw FULL Missing: 0 (0.0%),0,0.0%,0,0,No missing values in raw FULL or LESS CSVs.
+3_Column_Missing_Values_Before_After,Rooms,Raw FULL Missing: 0 (0.0%),0,0.0%,0,0,"No missing values in raw CSVs; clipped to [1, 10]."
+3_Column_Missing_Values_Before_After,Type,Raw FULL Missing: 0 (0.0%),0,0.0%,0,0,"No missing values in raw CSVs (h = House, u = Unit, t = Townhouse)."
+3_Column_Missing_Values_Before_After,Price,Raw FULL Missing: 7610 (21.83%),0,0.0%,0,7607,"Target variable: 2 backfilled from LESS via 7-key composite match; 7,607 remaining unpriced routed to Fact_UnseenProperty."
+3_Column_Missing_Values_Before_After,Method,Raw FULL Missing: 0 (0.0%),0,0.0%,0,0,"No missing values in raw CSVs (S, SP, PI, VB, SA)."
+3_Column_Missing_Values_Before_After,SellerG,Raw FULL Missing: 0 (0.0%),0,0.0%,0,0,No missing values in raw CSVs.
+3_Column_Missing_Values_Before_After,Date,Raw FULL Missing: 0 (0.0%),0,0.0%,0,0,Parsed via dayfirst ISO date parser (YYYY-MM-DD).
+3_Column_Missing_Values_Before_After,Distance,Raw FULL Missing: 1 (0.0%),1,0.0%,0,0,Backfilled from LESS suburb lookup; any remaining filled via Train global median.
+3_Column_Missing_Values_Before_After,Postcode,Raw FULL Missing: 1 (0.0%),1,0.0%,0,0,Backfilled from LESS suburb lookup.
+3_Column_Missing_Values_Before_After,Bedroom2,Raw FULL Missing: 8217 (23.57%),6428,23.64%,0,0,"Missing/invalid replaced with Rooms count clipped to [1, 10]."
+3_Column_Missing_Values_Before_After,Bathroom,Raw FULL Missing: 8226 (23.6%),6469,23.79%,0,0,"Train-only (Type, Rooms) median imputation fallback to Train global median."
+3_Column_Missing_Values_Before_After,Car,Raw FULL Missing: 8728 (25.04%),6813,25.06%,0,0,"Train-only (Type, Rooms) median imputation fallback to Train global median."
+3_Column_Missing_Values_Before_After,Landsize,Raw FULL Missing: 11810 (33.88%),9415,34.62%,0,0,4-tier Train-only median (Suburb×Type×Rooms → Suburb×Type → Region×Type → Type) + Landsize_was_imputed flag.
+3_Column_Missing_Values_Before_After,BuildingArea,Raw FULL Missing: 21115 (60.58%),16701,61.42%,0,0,5-tier Train-only median (Suburb×Type×Rooms → Suburb×Type → Region×Type×Rooms → Type×Rooms → Type) + BuildingArea_was_imputed flag.
+3_Column_Missing_Values_Before_After,YearBuilt,Raw FULL Missing: 19306 (55.39%),15140,55.68%,0,0,3-tier Train-only median (Suburb×Type → Suburb → Region) + YearBuilt_was_imputed flag.
+3_Column_Missing_Values_Before_After,CouncilArea,Raw FULL Missing: 3 (0.01%),1,0.0%,0,0,Backfilled from LESS suburb lookup; fallback to Train mode.
+3_Column_Missing_Values_Before_After,Lattitude,Raw FULL Missing: 7976 (22.88%),6241,22.95%,0,0,2-tier Train-only spatial median (Suburb → Region → Melbourne CBD).
+3_Column_Missing_Values_Before_After,Longtitude,Raw FULL Missing: 7976 (22.88%),6241,22.95%,0,0,2-tier Train-only spatial median (Suburb → Region → Melbourne CBD).
+3_Column_Missing_Values_Before_After,Regionname,Raw FULL Missing: 3 (0.01%),1,0.0%,0,0,Backfilled from LESS suburb lookup; fallback to Train mode.
+3_Column_Missing_Values_Before_After,Propertycount,Raw FULL Missing: 3 (0.01%),1,0.0%,0,0,Backfilled from LESS suburb lookup; fallback to Train median.
+4_Feature_Encoding_and_Scaling,Target Variable (Price),"Log1p Transformation — TransformedTargetRegressor(func=np.log1p, inverse_func=np.expm1)",,,,,Columns: Price ($ AUD) | Safeguard: Invertible monotonic transformation; predictions evaluated in original AUD dollars.
+4_Feature_Encoding_and_Scaling,High-Cardinality Location (350 Suburbs),"3-Tier Empirical Bayes (m-estimate) Target Encoding in log1p(Price) space (m = 10, 8, 6)",,,,,"Columns: SuburbTargetEncoded, SuburbTypeTargetEncoded, SuburbTypeRoomsTargetEncoded | Safeguard: Computed strictly Out-of-Fold (5-fold KFold) within Train set; Test & Unseen mapped from full-Train encoder only."
+4_Feature_Encoding_and_Scaling,Categorical Attributes (4 Columns → 49 One-Hot Cols),"OneHotEncoder(handle_unknown='ignore', sparse_output=False)",,,,,"Columns: Type (3), Method (5), Regionname (8), CouncilArea (33) | Safeguard: Fitted strictly on X_train inside sklearn ColumnTransformer pipeline."
+4_Feature_Encoding_and_Scaling,"Continuous Physical, Spatial & Temporal Features (24 Cols)","SimpleImputer(strategy='median') + StandardScaler() (zero mean, unit variance)",,,,,"Columns: Rooms, Bedroom2, Bathroom, Car, Landsize, BuildingArea, YearBuilt, PropertyAge, FloorToLandRatio, TotalUtilityRooms, Distance, RadialDistanceCBD, Lattitude, Longtitude, Propertycount, SaleYear, SaleQuarter, PriorSuburbMedianPrice, PriorPeriodMedianPrice, SuburbPremiumRatio, MarketIndex, QuarterTransactionVolume, ... | Safeguard: Medians, means, and standard deviations fitted strictly on X_train; past-only chronological medians for market benchmarks."
+4_Feature_Encoding_and_Scaling,Missingness Indicator Flags (3 Binary Cols),"Binary {0, 1} indicators captured prior to imputation (Total model matrix = 76 dimensions)",,,,,"Columns: BuildingArea_was_imputed, YearBuilt_was_imputed, Landsize_was_imputed | Safeguard: Deterministic row-level missingness check recorded before hierarchical Train-only imputation."

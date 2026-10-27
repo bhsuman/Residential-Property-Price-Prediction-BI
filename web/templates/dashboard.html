@@ -1,0 +1,2074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Residential Property Price Prediction &amp; BI Decision Support | COMP8811 Assignment 2</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&display=swap');
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f6f5f1;
+      color: #1c1917;
+      -webkit-font-smoothing: antialiased;
+    }
+    .serif-heading {
+      font-family: 'Newsreader', Georgia, serif;
+    }
+    .panel {
+      background: #ffffff;
+      border: 1px solid #e7e5e4;
+      border-radius: 0.75rem;
+      box-shadow: 0 1px 3px rgba(28, 25, 23, 0.04);
+    }
+    .nav-btn {
+      color: #57534e;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s ease;
+    }
+    .nav-btn:hover {
+      color: #1c1917;
+    }
+    .nav-btn.active {
+      color: #1e3a8a;
+      border-bottom-color: #1e3a8a;
+      font-weight: 600;
+    }
+    select, input[type="number"], input[type="text"] {
+      background-color: #ffffff;
+      border: 1px solid #d6d3d1;
+      color: #1c1917;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    select:focus, input[type="number"]:focus, input[type="text"]:focus {
+      outline: none;
+      border-color: #1e3a8a;
+      box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+    }
+    input[type="range"] {
+      accent-color: #1e3a8a;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 9999px;
+      background-color: #15803d;
+      display: inline-block;
+    }
+    .table-btn-active {
+      background-color: #1e3a8a !important;
+      color: #ffffff !important;
+      border-color: #1e3a8a !important;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f5f5f4; }
+    ::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 3px; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- =================================================================== -->
+  <!-- 1. GLOBAL HEADER & NAVIGATION BAR (FULL VISIBILITY, NO TRUNCATION)  -->
+  <!-- =================================================================== -->
+  <header class="sticky top-0 z-30 bg-white border-b border-stone-200 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Top Row: Full Title, Full Subtitle & Status Pill -->
+      <div class="flex flex-wrap items-center justify-between py-3 gap-3">
+        <div class="flex items-start sm:items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-blue-950 text-white flex items-center justify-center font-semibold text-sm tracking-wider shrink-0 mt-0.5 sm:mt-0">
+            BI
+          </div>
+          <div>
+            <h1 class="serif-heading text-lg sm:text-xl lg:text-2xl font-semibold text-stone-900 tracking-tight leading-snug">
+              Residential Property Price Prediction &amp; BI Decision Support
+            </h1>
+            <p class="text-xs sm:text-sm text-stone-500 leading-snug mt-0.5">
+              COMP8811 Assignment 2 — Predictive Analytics &amp; Star Schema BI System (Bayleys Case Study | Melbourne Housing Dataset)
+            </p>
+          </div>
+        </div>
+
+        <!-- Right Status Pill ("4/4 Models Active") -->
+        <div class="flex items-center shrink-0 ml-auto sm:ml-0">
+          <button onclick="switchTab('system')" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 text-xs font-semibold text-emerald-900 transition" title="View active regression models and Star Schema pipeline status">
+            <span class="status-dot"></span>
+            <span id="top-live-badge">4/4 Models Active</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Bottom Row: 3 Main Navigation Tabs (Responsive & Fully Visible) -->
+      <nav class="flex items-center gap-2 sm:gap-8 border-t border-stone-100 overflow-x-auto" aria-label="Main Navigation">
+        <button onclick="switchTab('estimator')" id="tab-btn-estimator" class="nav-btn active py-2.5 px-2 sm:px-1 text-xs sm:text-sm whitespace-nowrap">
+          Property Valuation (Live Predictor)
+        </button>
+        <button onclick="switchTab('dashboard')" id="tab-btn-dashboard" class="nav-btn py-2.5 px-2 sm:px-1 text-xs sm:text-sm whitespace-nowrap">
+          BI Decision Support Dashboard
+        </button>
+        <button onclick="switchTab('system')" id="tab-btn-system" class="nav-btn py-2.5 px-2 sm:px-1 text-xs sm:text-sm whitespace-nowrap">
+          Models &amp; Star Schema Pipeline
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT WORKSPACE -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+
+    <!-- =================================================================== -->
+    <!-- TAB 1: PROPERTY VALUATION (LIVE PREDICTOR)                          -->
+    <!-- =================================================================== -->
+    <section id="tab-estimator" class="space-y-6">
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- LEFT COLUMN: PROPERTY SPECIFICATIONS FORM (4 Columns) -->
+        <div class="lg:col-span-4 panel p-5 sm:p-6 space-y-4">
+          <div class="border-b border-stone-200 pb-3">
+            <h2 class="serif-heading text-xl font-semibold text-stone-900">Property Specifications</h2>
+            <p class="text-xs text-stone-500 mt-0.5">
+              Select location, physical attributes, and market conditions to generate a live model valuation.
+            </p>
+          </div>
+
+          <!-- Sample Profiles -->
+          <div>
+            <div class="text-[11px] font-semibold text-stone-500 uppercase tracking-wider mb-2">Sample Profiles</div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-2">
+              <button type="button" onclick="applyQuickExample('family')" class="px-2.5 py-2 rounded-md border border-stone-200 hover:border-blue-900 hover:bg-stone-50 text-left transition">
+                <div class="text-xs font-semibold text-stone-800">Richmond</div>
+                <div class="text-[11px] text-stone-500">3 Bed House</div>
+              </button>
+              <button type="button" onclick="applyQuickExample('apartment')" class="px-2.5 py-2 rounded-md border border-stone-200 hover:border-blue-900 hover:bg-stone-50 text-left transition">
+                <div class="text-xs font-semibold text-stone-800">South Yarra</div>
+                <div class="text-[11px] text-stone-500">2 Bed Unit</div>
+              </button>
+              <button type="button" onclick="applyQuickExample('large')" class="px-2.5 py-2 rounded-md border border-stone-200 hover:border-blue-900 hover:bg-stone-50 text-left transition">
+                <div class="text-xs font-semibold text-stone-800">Kew</div>
+                <div class="text-[11px] text-stone-500">4 Bed Residence</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Assignment 1 Independent Variable Inputs -->
+          <div class="space-y-3.5">
+
+            <!-- 1. Metropolitan Region -->
+            <div>
+              <label for="req-region" class="block text-xs font-medium text-stone-700 mb-1">
+                Metropolitan Region
+              </label>
+              <select id="req-region" onchange="onRegionChange()" class="w-full rounded-md px-3 py-2 text-sm">
+                <option value="ALL">All Melbourne Regions</option>
+              </select>
+            </div>
+
+            <!-- 2. Suburb (showing Suburb Median Price) -->
+            <div>
+              <label for="req-suburb" class="block text-xs font-medium text-stone-700 mb-1">
+                Suburb &amp; Median Price
+              </label>
+              <select id="req-suburb" onchange="runValuation()" class="w-full rounded-md px-3 py-2 text-sm">
+              </select>
+              <p id="suburb-helper-text" class="text-[11px] text-stone-500 mt-1 leading-normal"></p>
+            </div>
+
+            <!-- 3. Property Type -->
+            <div>
+              <label for="req-type" class="block text-xs font-medium text-stone-700 mb-1">
+                Property Type
+              </label>
+              <select id="req-type" onchange="onTypeChange()" class="w-full rounded-md px-3 py-2 text-sm">
+                <option value="h" selected>House (h)</option>
+                <option value="t">Townhouse (t)</option>
+                <option value="u">Unit / Apartment (u)</option>
+              </select>
+            </div>
+
+            <!-- 4. Bedrooms (1 to 6) & Bathrooms (1 to 4) -->
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="req-rooms" class="block text-xs font-medium text-stone-700 mb-1">
+                  Bedrooms
+                </label>
+                <select id="req-rooms" onchange="runValuation()" class="w-full rounded-md px-2.5 py-2 text-sm">
+                  <option value="1">1 Bedroom</option>
+                  <option value="2">2 Bedrooms</option>
+                  <option value="3" selected>3 Bedrooms</option>
+                  <option value="4">4 Bedrooms</option>
+                  <option value="5">5 Bedrooms</option>
+                  <option value="6">6 Bedrooms</option>
+                </select>
+              </div>
+              <div>
+                <label for="req-bathrooms" class="block text-xs font-medium text-stone-700 mb-1">
+                  Bathrooms
+                </label>
+                <select id="req-bathrooms" onchange="runValuation()" class="w-full rounded-md px-2.5 py-2 text-sm">
+                  <option value="1">1 Bathroom</option>
+                  <option value="2" selected>2 Bathrooms</option>
+                  <option value="3">3 Bathrooms</option>
+                  <option value="4">4 Bathrooms</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- 5. Car Spaces (0 to 4) & 8. Year Built (1900 to 2020) -->
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label for="req-cars" class="block text-xs font-medium text-stone-700 mb-1">
+                  Car Spaces
+                </label>
+                <select id="req-cars" onchange="runValuation()" class="w-full rounded-md px-2.5 py-2 text-sm">
+                  <option value="0">0 Spaces</option>
+                  <option value="1">1 Car Space</option>
+                  <option value="2" selected>2 Car Spaces</option>
+                  <option value="3">3 Car Spaces</option>
+                  <option value="4">4 Car Spaces</option>
+                </select>
+              </div>
+              <div>
+                <label for="req-year-built" class="block text-xs font-medium text-stone-700 mb-1">
+                  Year Built
+                </label>
+                <input
+                  type="number"
+                  id="req-year-built"
+                  min="1900"
+                  max="2020"
+                  step="1"
+                  value="1935"
+                  onchange="runValuation()"
+                  class="w-full rounded-md px-2.5 py-2 text-sm font-medium"
+                />
+              </div>
+            </div>
+
+            <!-- 6. Land Area (Landsize in sqm: 50 to 2000 sqm) -->
+            <div class="bg-stone-50/80 border border-stone-200 rounded-lg p-3">
+              <div class="flex items-center justify-between gap-2 mb-1">
+                <label for="req-landsize" class="text-xs font-medium text-stone-700">
+                  Land Area (sqm)
+                </label>
+                <div class="flex items-center gap-1">
+                  <input
+                    type="number"
+                    id="req-landsize"
+                    min="50"
+                    max="2000"
+                    step="10"
+                    value="320"
+                    oninput="syncSlider('req-landsize', 'req-landsize-slider')"
+                    onchange="runValuation()"
+                    class="w-20 rounded px-2 py-1 text-xs font-semibold text-right"
+                  />
+                  <span class="text-xs text-stone-500">m²</span>
+                </div>
+              </div>
+              <input
+                type="range"
+                id="req-landsize-slider"
+                min="50"
+                max="2000"
+                step="10"
+                value="320"
+                oninput="syncInput('req-landsize-slider', 'req-landsize')"
+                onchange="runValuation()"
+                class="w-full h-1.5 cursor-pointer"
+              />
+              <div class="flex justify-between text-[10px] text-stone-400 mt-0.5">
+                <span>50 m²</span>
+                <span>500 m²</span>
+                <span>1,000 m²</span>
+                <span>2,000 m²</span>
+              </div>
+            </div>
+
+            <!-- 7. Floor Area (BuildingArea in sqm: 40 to 600 sqm) -->
+            <div class="bg-stone-50/80 border border-stone-200 rounded-lg p-3">
+              <div class="flex items-center justify-between gap-2 mb-1">
+                <label for="req-building-area" class="text-xs font-medium text-stone-700">
+                  Floor Area (sqm)
+                </label>
+                <div class="flex items-center gap-1">
+                  <input
+                    type="number"
+                    id="req-building-area"
+                    min="40"
+                    max="600"
+                    step="5"
+                    value="155"
+                    oninput="syncSlider('req-building-area', 'req-building-area-slider')"
+                    onchange="runValuation()"
+                    class="w-20 rounded px-2 py-1 text-xs font-semibold text-right"
+                  />
+                  <span class="text-xs text-stone-500">m²</span>
+                </div>
+              </div>
+              <input
+                type="range"
+                id="req-building-area-slider"
+                min="40"
+                max="600"
+                step="5"
+                value="155"
+                oninput="syncInput('req-building-area-slider', 'req-building-area')"
+                onchange="runValuation()"
+                class="w-full h-1.5 cursor-pointer"
+              />
+              <div class="flex justify-between text-[10px] text-stone-400 mt-0.5">
+                <span>40 m²</span>
+                <span>150 m²</span>
+                <span>350 m²</span>
+                <span>600 m²</span>
+              </div>
+            </div>
+
+            <!-- 9. Market Interest Rate (Scenario Input — Display Only) -->
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label for="req-rate" class="block text-xs font-medium text-stone-700">
+                  Interest Rate Scenario
+                </label>
+                <span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-medium">
+                  Display Only · Not a Model Feature
+                </span>
+              </div>
+              <select id="req-rate" onchange="runValuation()" class="w-full rounded-md px-3 py-2 text-sm">
+                <option value="1.50" selected>1.50% — RBA Baseline Period (2016–2018)</option>
+                <option value="2.00">2.00% — Early Cycle Rate</option>
+                <option value="2.50">2.50% — Moderate Interest Environment</option>
+                <option value="3.00">3.00% — Neutral Monetary Policy</option>
+                <option value="3.60">3.60% — Tightened Lending Conditions</option>
+                <option value="4.10">4.10% — Restrictive Cash Rate</option>
+                <option value="4.50">4.50% — High Interest Stress Scenario</option>
+              </select>
+              <p class="text-[11px] text-stone-500 mt-1 leading-snug">
+                Dataset covers 2016–2018 (RBA cash rate 1.50%–2.00%), so rate is a post-prediction macro scenario note only and does not alter ŷ.
+              </p>
+            </div>
+
+            <input type="hidden" id="req-model" value="xgboost" />
+          </div>
+
+          <button type="button" onclick="runValuation()" class="w-full py-2.5 rounded-lg bg-blue-900 hover:bg-blue-950 text-white font-medium text-sm transition shadow-sm">
+            Update Property Valuation
+          </button>
+        </div>
+
+        <!-- RIGHT COLUMN: INDEPENDENT VALUATION REPORT & CHARTS (8 Columns) -->
+        <div class="lg:col-span-8 space-y-6">
+
+          <!-- INDEPENDENT VALUATION REPORT PANEL -->
+          <div class="panel p-6 sm:p-7">
+            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 pb-6 border-b border-stone-200">
+              <div>
+                <div class="text-xs font-semibold uppercase tracking-wider text-blue-900">
+                  Independent Valuation Report
+                </div>
+                <h3 class="serif-heading text-2xl sm:text-3xl font-semibold text-stone-900 mt-1.5" id="out-title">
+                  3-Bedroom House in Richmond
+                </h3>
+                <p class="text-xs sm:text-sm text-stone-500 mt-1 leading-relaxed" id="out-subtitle">
+                  Northern Metropolitan · 2.6 km from CBD · Postcode 3121 · 2 Bath · 2 Car
+                </p>
+              </div>
+
+              <div class="md:text-right bg-stone-50 border border-stone-200 rounded-lg px-5 py-3.5 shrink-0">
+                <div class="text-[11px] font-semibold uppercase tracking-wider text-blue-950">
+                  PREDICTED PROPERTY PRICE (ŷ — XGBoost Champion)
+                </div>
+                <div class="serif-heading text-3xl sm:text-4xl font-bold text-blue-950 mt-0.5" id="out-price">
+                  $1,245,000
+                </div>
+                <div class="text-xs text-stone-500 mt-0.5 flex items-center md:justify-end gap-1.5 relative group">
+                  <span id="out-range">95% Conformal Interval: $1,140,000 – $1,350,000</span>
+                  <span
+                    id="out-range-tooltip-icon"
+                    class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-100 text-blue-900 text-[10px] font-bold cursor-help"
+                    title="Split Conformal Prediction Interval calibrated on held-out / OOF log-residuals stratified by dwelling type."
+                  >?</span>
+                  <div
+                    id="out-range-tooltip-box"
+                    class="hidden group-hover:block absolute right-0 top-6 z-30 w-80 p-3 rounded-lg bg-stone-900 text-stone-100 text-[11px] text-left leading-relaxed shadow-xl border border-stone-700"
+                  >
+                    Split Conformal Prediction Interval calibrated on 21,753 out-of-fold log-residuals stratified by dwelling type.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4 Academic & BI Metrics from Assignment 1 Section 2.3 & Section 2.6 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 py-5 border-b border-stone-200">
+              <div>
+                <div class="text-xs text-stone-500 font-medium">Suburb Prior-Period Median</div>
+                <div class="text-base sm:text-lg font-bold text-stone-900 mt-0.5" id="out-suburb-median">$1,068,500</div>
+                <div class="text-[11px] text-stone-500" id="out-suburb-median-sub">Historical suburb median benchmark</div>
+              </div>
+              <div class="sm:border-l sm:border-stone-200 sm:pl-4">
+                <div class="text-xs text-stone-500 font-medium">Engineered Property Age &amp; Ratio</div>
+                <div class="text-base sm:text-lg font-bold text-stone-900 mt-0.5" id="out-engineered-age-ratio">83 yrs · 48.4% Ratio</div>
+                <div class="text-[11px] text-stone-500" id="out-engineered-sub">PropertyAge &amp; Floor-to-Land Ratio</div>
+              </div>
+              <div class="lg:border-l lg:border-stone-200 lg:pl-4">
+                <div class="text-xs text-stone-500 font-medium">CBD Radial Distance</div>
+                <div class="text-base sm:text-lg font-bold text-stone-900 mt-0.5" id="out-cbd-distance">2.6 km from CBD</div>
+                <div class="text-[11px] text-stone-500" id="out-cbd-distance-sub">Melbourne CBD proximity</div>
+              </div>
+              <div class="sm:border-l sm:border-stone-200 sm:pl-4">
+                <div class="text-xs text-stone-500 font-medium">Champion Model Error Margin</div>
+                <div class="text-sm sm:text-base font-bold text-emerald-800 mt-0.5" id="out-champion-error">R² = 81.8% | MAE = $149,771</div>
+                <div class="text-[11px] text-stone-500">XGBoost Holdout Test (20% Split)</div>
+              </div>
+            </div>
+
+            <!-- BI Decision Support Summary Text -->
+            <div class="pt-4 text-xs sm:text-sm text-stone-600 leading-relaxed" id="out-plain-summary"></div>
+
+            <!-- Predictive Analytics Framework Strip -->
+            <div class="mt-4 pt-3 border-t border-stone-100">
+              <div class="px-3 py-2 rounded-lg bg-blue-50/80 text-blue-950 text-xs font-medium border border-blue-200 leading-relaxed">
+                Predictive Analytics Framework | Property Data &rarr; Feature Engineering &rarr; Regression Model (XGBoost) &rarr; Predicted Price &rarr; BI Decision Support
+              </div>
+            </div>
+          </div>
+
+          <!-- 2 BOTTOM CHARTS ON TAB 1 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="panel p-5">
+              <div class="flex flex-wrap items-start justify-between gap-2 mb-1">
+                <div>
+                  <h4 class="text-sm font-semibold text-stone-900">
+                    Hedonic Value Composition (Feature Contribution to Predicted Price)
+                  </h4>
+                  <p class="text-[11px] text-stone-500 mt-0.5" id="chart-why-price-sub">
+                    Per-prediction TreeSHAP contributions grouped into 5 hedonic categories
+                  </p>
+                </div>
+                <div class="inline-flex rounded-md border border-stone-300 bg-stone-50 p-0.5 text-[10px] font-medium shrink-0">
+                  <button type="button" id="btn-shap-local" onclick="switchHedonicMode('local')" class="px-2 py-0.5 rounded bg-blue-900 text-white transition">
+                    Local TreeSHAP
+                  </button>
+                  <button type="button" id="btn-shap-global" onclick="switchHedonicMode('global')" class="px-2 py-0.5 rounded text-stone-700 hover:bg-stone-200 transition">
+                    Global Importance
+                  </button>
+                </div>
+              </div>
+              <div id="chart-why-price" class="w-full h-64"></div>
+            </div>
+
+            <div class="panel p-5">
+              <h4 class="text-sm font-semibold text-stone-900">
+                Cross-Model Valuation Comparison (XGBoost vs. Random Forest vs. Decision Tree vs. Linear Regression)
+              </h4>
+              <p class="text-xs text-stone-500 mb-2">
+                Side-by-side price predictions across all 4 trained regression algorithms
+              </p>
+              <div id="chart-four-models" class="w-full h-64"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- FULL-WIDTH COMPARABLE SETTLED SALES SECTION (No Empty Left Column Space) -->
+      <div class="panel p-5 sm:p-6">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div>
+            <h4 class="serif-heading text-lg font-semibold text-stone-900">
+              Comparable Settled Sales (Out-of-Sample Predictions)
+            </h4>
+            <p class="text-xs text-stone-500">
+              Historical settled transactions matching your selected suburb, dwelling type, and bedroom profile (Holdout Test prioritized, 5-Fold OOF fallback)
+            </p>
+          </div>
+          <span id="comps-badge" class="px-2.5 py-1 rounded bg-stone-100 text-stone-700 text-xs font-medium whitespace-nowrap">8 Comparable Sales</span>
+        </div>
+
+        <div id="similar-homes-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 2: BI DECISION SUPPORT DASHBOARD                                -->
+    <!-- =================================================================== -->
+    <section id="tab-dashboard" class="hidden space-y-6">
+
+      <!-- Top Filter Bar -->
+      <div class="panel p-5">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3.5">
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="serif-heading text-xl font-semibold text-stone-900">
+                BI Decision Support Dashboard
+              </h2>
+              <span id="bi-split-badge" class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-semibold">
+                Holdout Test Set Only (5,439 Sales · Zero In-Sample Leakage)
+              </span>
+            </div>
+            <p class="text-xs text-stone-500 mt-0.5">
+              Out-of-sample evaluation across historical sales, model predictions, and regional valuation benchmarks
+            </p>
+          </div>
+          <button type="button" onclick="resetDashboardFilters()" class="px-3 py-1.5 rounded-md border border-stone-300 hover:bg-stone-100 text-xs font-medium text-stone-700 transition">
+            Reset All Filters
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div>
+            <label for="bi-split" class="block text-xs font-medium text-stone-600 mb-1">Evaluation Split (Train vs Test)</label>
+            <select id="bi-split" onchange="loadDashboard()" class="w-full rounded-md px-3 py-2 text-xs font-medium">
+              <option value="TEST" selected>Holdout Test Only (20% · 5,439)</option>
+              <option value="ALL">All Out-of-Sample (OOF + Test · 27,192)</option>
+              <option value="TRAIN">Train 5-Fold OOF Only (80% · 21,753)</option>
+            </select>
+          </div>
+          <div>
+            <label for="bi-region" class="block text-xs font-medium text-stone-600 mb-1">Region</label>
+            <select id="bi-region" onchange="loadDashboard()" class="w-full rounded-md px-3 py-2 text-xs">
+              <option value="ALL">All Metropolitan Regions</option>
+            </select>
+          </div>
+          <div>
+            <label for="bi-type" class="block text-xs font-medium text-stone-600 mb-1">Dwelling Type</label>
+            <select id="bi-type" onchange="loadDashboard()" class="w-full rounded-md px-3 py-2 text-xs">
+              <option value="ALL">All Dwelling Types</option>
+              <option value="h">Houses (h)</option>
+              <option value="t">Townhouses (t)</option>
+              <option value="u">Apartments / Units (u)</option>
+            </select>
+          </div>
+          <div>
+            <label for="bi-rooms" class="block text-xs font-medium text-stone-600 mb-1">Bedrooms</label>
+            <select id="bi-rooms" onchange="loadDashboard()" class="w-full rounded-md px-3 py-2 text-xs">
+              <option value="ALL">All Bedroom Counts</option>
+              <option value="2">2 Bedrooms</option>
+              <option value="3">3 Bedrooms</option>
+              <option value="4">4 Bedrooms</option>
+              <option value="5+">5+ Bedrooms</option>
+            </select>
+          </div>
+          <div>
+            <label for="bi-max-price" class="block text-xs font-medium text-stone-600 mb-1">Price Ceiling</label>
+            <select id="bi-max-price" onchange="loadDashboard()" class="w-full rounded-md px-3 py-2 text-xs">
+              <option value="ALL">No Price Limit</option>
+              <option value="750000">Up to $750,000</option>
+              <option value="1000000">Up to $1,000,000</option>
+              <option value="1500000">Up to $1,500,000</option>
+              <option value="2500000">Up to $2,500,000</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 KPI Cards Using Exact Assignment 1 Star Schema Terminology -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="panel p-5">
+          <div class="text-xs font-medium text-stone-600" id="bi-kpi-sales-label">Holdout Test Sales (Fact_PropertySale)</div>
+          <div class="serif-heading text-2xl sm:text-3xl font-bold text-stone-900 mt-1" id="bi-kpi-sales">5,439</div>
+          <div class="text-[11px] text-stone-500 mt-0.5" id="bi-kpi-sales-sub">Out-of-sample test transactions (20% split)</div>
+        </div>
+        <div class="panel p-5">
+          <div class="text-xs font-medium text-stone-600">Mean Actual Sale Price (SalePrice)</div>
+          <div class="serif-heading text-2xl sm:text-3xl font-bold text-stone-900 mt-1" id="bi-kpi-actual">$1,040,370</div>
+          <div class="text-[11px] text-stone-500 mt-0.5" id="bi-kpi-actual-sub">Historical settled market mean (active split)</div>
+        </div>
+        <div class="panel p-5">
+          <div class="text-xs font-medium text-stone-600">Mean Predicted Price (PredictedPrice)</div>
+          <div class="serif-heading text-2xl sm:text-3xl font-bold text-blue-950 mt-1" id="bi-kpi-pred">$1,041,375</div>
+          <div class="text-[11px] text-stone-500 mt-0.5" id="bi-kpi-pred-sub">Out-of-sample XGBoost mean (active split)</div>
+        </div>
+        <div class="panel p-5">
+          <div class="text-xs font-medium text-stone-600">Mean Absolute Error (AbsoluteError)</div>
+          <div class="serif-heading text-2xl sm:text-3xl font-bold text-emerald-800 mt-1" id="bi-kpi-mae">$149,771</div>
+          <div class="text-[11px] text-emerald-800 font-medium mt-0.5" id="bi-kpi-undervalued-sub">Holdout R² = 81.8% | RMSE = $250,353</div>
+        </div>
+      </div>
+
+      <!-- 2x2 Grid of Interactive Plotly Charts (Row 1) -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Chart 1 (Top-Left) -->
+        <div class="panel p-5">
+          <h3 class="text-sm font-semibold text-stone-900">
+            Actual Sale Price (SalePrice) vs. Predicted Price (PredictedPrice) by Region
+          </h3>
+          <p class="text-xs text-stone-500 mb-2">
+            Grouped bar comparison of mean actual vs. out-of-sample XGBoost predicted prices across regions and suburbs
+          </p>
+          <div id="bi-chart-regional" class="w-full h-72"></div>
+        </div>
+
+        <!-- Chart 2 (Top-Right) -->
+        <div class="panel p-5">
+          <h3 class="text-sm font-semibold text-stone-900">
+            Quarterly Price Trajectory: Actual vs. Predicted Price Over Time (Dim_Date &amp; Dim_Market)
+          </h3>
+          <p class="text-xs text-stone-500 mb-2">
+            Chronological quarterly price trend tracking actual market settlements against out-of-sample predictions
+          </p>
+          <div id="bi-chart-trend" class="w-full h-72"></div>
+        </div>
+      </div>
+
+      <!-- 2x2 Grid of Interactive Plotly Charts (Row 2) -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Chart 3 (Bottom-Left) -->
+        <div class="panel p-5">
+          <h3 class="text-sm font-semibold text-stone-900">
+            Actual vs. Predicted Price Scatter Plot (Model Fit &amp; 45° Parity Line)
+          </h3>
+          <p class="text-xs text-stone-500 mb-2">
+            Out-of-sample records plotted against the 45° parity line (ŷ = y)
+          </p>
+          <div id="bi-chart-scatter" class="w-full h-72"></div>
+        </div>
+
+        <!-- Chart 4 (Bottom-Right) -->
+        <div class="panel p-5">
+          <h3 class="text-sm font-semibold text-stone-900">
+            Mean Absolute Prediction Error (AbsoluteError) by Property Type &amp; Bedroom Count
+          </h3>
+          <p class="text-xs text-stone-500 mb-2">
+            Out-of-sample error breakdown by dwelling type and bedroom count showing where the model is most accurate
+          </p>
+          <div id="bi-chart-error-type-rooms" class="w-full h-72"></div>
+        </div>
+      </div>
+
+      <!-- Bottom Table: Unseen Properties Scored (Fact_UnseenProperty — 7,607 Listings) -->
+      <div class="panel p-5 sm:p-6">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-4">
+          <div>
+            <h3 class="serif-heading text-lg font-semibold text-stone-900">
+              Unseen Properties Scored (Fact_UnseenProperty — 7,607 Listings) &amp; Relative Type Comparison
+            </h3>
+            <p class="text-xs text-stone-500">
+              Unpriced Melbourne listings (no asking/sale price in raw CSV) scored by XGBoost and compared against the training median for the same suburb &amp; dwelling type
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <input
+              type="text"
+              id="bi-unseen-search"
+              placeholder="Search suburb or street..."
+              oninput="loadDashboard()"
+              class="rounded-md px-2.5 py-1.5 text-xs w-44"
+            />
+            <select id="bi-unseen-sort" onchange="loadDashboard()" class="rounded-md px-2.5 py-1.5 text-xs">
+              <option value="opportunity" selected>Sort: Below Typical Price for Type</option>
+              <option value="price_asc">Sort: Predicted Price (Low &rarr; High)</option>
+              <option value="price_desc">Sort: Predicted Price (High &rarr; Low)</option>
+              <option value="suburb_asc">Sort: Suburb (A &rarr; Z)</option>
+            </select>
+            <span id="unseen-table-badge" class="px-2.5 py-1.5 rounded bg-blue-50 text-blue-900 border border-blue-200 text-xs font-semibold whitespace-nowrap">
+              7,607 Unseen Properties Scored
+            </span>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="border-b border-stone-200 bg-stone-50 text-stone-600 uppercase text-[11px]">
+                <th class="py-2.5 px-3">Suburb &amp; Relative Type Position</th>
+                <th class="py-2.5 px-3">Property Type</th>
+                <th class="py-2.5 px-3 text-center">Bedrooms</th>
+                <th class="py-2.5 px-3 text-center">Bathrooms</th>
+                <th class="py-2.5 px-3 text-right">Land Area</th>
+                <th class="py-2.5 px-3 text-right">Floor Area</th>
+                <th class="py-2.5 px-3 text-right">Predicted Price (vs. Same-Type Median)</th>
+              </tr>
+            </thead>
+            <tbody id="bi-unseen-tbody" class="divide-y divide-stone-100 text-stone-700"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 3: MODELS & STAR SCHEMA PIPELINE                                -->
+    <!-- =================================================================== -->
+    <section id="tab-system" class="hidden space-y-6">
+
+      <div class="panel p-6 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2 text-xs font-medium text-emerald-800">
+            <span class="status-dot"></span>
+            <span>All 4 Regression Models &amp; SQLite Star Schema Warehouse Online</span>
+          </div>
+          <h2 class="serif-heading text-xl font-semibold text-stone-900 mt-1">
+            Regression Models &amp; Star Schema Data Warehouse Pipeline
+          </h2>
+          <p class="text-xs text-stone-500 mt-0.5">
+            Live evaluation metrics across XGBoost, Random Forest, Decision Tree, and Linear Regression + Dual-CSV ETL Star Schema inspection.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" onclick="refreshStatus(true)" class="px-3.5 py-2 rounded-lg border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-medium transition flex items-center gap-2">
+            <i class="fa-solid fa-rotate" id="ping-icon"></i>
+            <span>Verify Model Status</span>
+          </button>
+          <button type="button" onclick="runETLLive()" id="btn-etl-run" class="px-3.5 py-2 rounded-lg bg-blue-900 hover:bg-blue-950 text-white text-xs font-medium transition flex items-center gap-2">
+            <i class="fa-solid fa-play"></i>
+            <span>Run ETL Pipeline</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Section 1: 4 Regression Models Status Grid -->
+      <div class="space-y-4">
+        <h3 class="text-sm font-semibold text-stone-800">
+          1. Active Statistical &amp; Machine Learning Regression Models
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="system-models-grid"></div>
+
+        <!-- Visual Comparison Chart Right Below the 4 Model Cards -->
+        <div class="panel p-5 sm:p-6">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div>
+              <h4 class="text-sm sm:text-base font-semibold text-stone-900">
+                Model Performance Benchmark (Test R², MAE, RMSE &amp; Global Feature Importance)
+              </h4>
+              <p class="text-xs text-stone-500">
+                Holdout Test Set (5,439 unseen sales) evaluation comparing XGBoost, Random Forest, Decision Tree, and Linear Regression
+              </p>
+            </div>
+            <span id="system-champion-badge" class="px-2.5 py-1 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold">
+              Champion: XGBoost
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div>
+              <div class="text-xs font-semibold text-stone-700 mb-1">
+                Explained Variance &amp; Relative Error — Holdout R², 5-Fold CV R² &amp; MAPE (%)
+              </div>
+              <div id="system-chart-r2" class="w-full h-64"></div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-stone-700 mb-1">
+                Prediction Error — Holdout Test MAE &amp; RMSE ($)
+              </div>
+              <div id="system-chart-errors" class="w-full h-64"></div>
+            </div>
+            <div>
+              <div class="text-xs font-semibold text-stone-700 mb-1">
+                Global Feature Importance (XGBoost Champion — %)
+              </div>
+              <div id="system-chart-feature-importance" class="w-full h-64"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Holdout Residual & Error Slice Analysis (Diagnostics by Price Band, Region & Dwelling Type) -->
+      <div class="panel p-5 sm:p-6 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="text-sm sm:text-base font-semibold text-stone-900">
+              2. Holdout Residual &amp; Error Slice Analysis (Diagnostics by Price Band, Region &amp; Dwelling Type)
+            </h3>
+            <p class="text-xs text-stone-500">
+              Empirical residual diagnostics across the 5,439 Holdout Test properties evaluating heteroscedasticity and segment-level accuracy
+            </p>
+          </div>
+          <span class="px-2.5 py-1 rounded bg-blue-50 text-blue-950 border border-blue-200 text-xs font-semibold">
+            Log1p Target + Conformal Calibration
+          </span>
+        </div>
+
+        <!-- Key Residual Finding Callout -->
+        <div class="p-3.5 rounded-lg bg-amber-50/90 border border-amber-200 text-xs text-amber-950 leading-relaxed" id="system-residual-finding">
+          Loading empirical holdout residual analysis...
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div>
+            <div class="text-xs font-semibold text-stone-700 mb-1">
+              Residuals (y &minus; ŷ) vs. Predicted Price (ŷ) on Holdout Test
+            </div>
+            <div id="system-chart-residuals-scatter" class="w-full h-64"></div>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-stone-700 mb-1">
+              Holdout Error by Price Band — MAE ($) &amp; MAPE (%)
+            </div>
+            <div id="system-chart-error-price-band" class="w-full h-64"></div>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-stone-700 mb-1">
+              Holdout Error by Region &amp; Dwelling Type — MAE ($)
+            </div>
+            <div id="system-chart-error-region-type" class="w-full h-64"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: ETL Data Cleaning & Dimensional Star Schema Warehouse -->
+      <div class="panel p-6 space-y-5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 class="text-sm sm:text-base font-semibold text-stone-900 mb-0.5">
+              3. ETL Data Cleaning Audit &amp; Dimensional Star Schema Warehouse
+            </h3>
+            <p class="text-xs text-stone-500">
+              End-to-end audit across both source CSVs (melbourne_house_prices_less.csv &amp; melbourne_housing_full.csv): deduplication, missingness before/after, explicit outlier thresholds, dropped/routed rows, and feature encoding
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- Hidden Word report download button (preserved for later display on request) -->
+            <a
+              id="btn-download-word"
+              href="/download/report.docx"
+              download="COMP8811_Assignment2_Technical_Report.docx"
+              style="display: none;"
+              class="hidden px-3 py-1.5 rounded-lg bg-blue-900 hover:bg-blue-950 text-white text-xs font-medium transition inline-flex items-center gap-1.5 shadow-sm"
+            >
+              <i class="fa-solid fa-file-word"></i>
+              <span>Download Word Report (.docx)</span>
+            </a>
+            <a
+              href="/api/etl/quality-report?format=csv"
+              download="melbourne_etl_data_quality_summary.csv"
+              class="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-medium transition inline-flex items-center gap-1.5 shadow-sm"
+            >
+              <i class="fa-solid fa-file-csv"></i>
+              <span>Download Data Quality Summary (CSV)</span>
+            </a>
+            <a
+              href="/api/etl/quality-report?format=json"
+              download="melbourne_etl_data_quality_summary.json"
+              class="px-3 py-1.5 rounded-lg border border-stone-300 bg-white hover:bg-stone-100 text-stone-800 text-xs font-medium transition inline-flex items-center gap-1.5"
+            >
+              <i class="fa-solid fa-file-code"></i>
+              <span>Download Audit Report (JSON)</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3" id="etl-summary-cards"></div>
+
+        <!-- Detailed ETL Data Quality Audit Panels (2x2 Grid) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 pt-2 border-t border-stone-200">
+          <!-- Panel A: Duplicates Removed & Row Disposition Audit -->
+          <div class="border border-stone-200 rounded-lg overflow-hidden bg-stone-50/40">
+            <div class="px-3.5 py-2.5 bg-stone-100 border-b border-stone-200 flex items-center justify-between">
+              <span class="text-xs font-semibold text-stone-800">
+                A. Duplicate Removal &amp; Row Disposition Audit (97,880 Raw &rarr; Star Schema)
+              </span>
+              <span class="text-[10px] font-medium text-stone-500" id="etl-dup-badge">2 CSVs Integrated</span>
+            </div>
+            <div class="overflow-x-auto max-h-64">
+              <table class="w-full text-left border-collapse text-[11px]">
+                <thead class="bg-stone-50 text-stone-600 uppercase text-[10px] border-b border-stone-200 sticky top-0">
+                  <tr>
+                    <th class="py-2 px-3">Pipeline Stage</th>
+                    <th class="py-2 px-2.5 text-right">Records</th>
+                    <th class="py-2 px-2.5">Disposition</th>
+                    <th class="py-2 px-3">Reason / Rule</th>
+                  </tr>
+                </thead>
+                <tbody id="etl-disposition-tbody" class="divide-y divide-stone-100 text-stone-700 bg-white"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Panel B: Outlier & Anomaly Rules Applied (Thresholds & Counts) -->
+          <div class="border border-stone-200 rounded-lg overflow-hidden bg-stone-50/40">
+            <div class="px-3.5 py-2.5 bg-stone-100 border-b border-stone-200 flex items-center justify-between">
+              <span class="text-xs font-semibold text-stone-800">
+                B. Outlier &amp; Anomaly Rules Applied (State Thresholds &amp; Real Counts)
+              </span>
+              <span class="text-[10px] font-medium text-amber-900 bg-amber-100 px-2 py-0.5 rounded" id="etl-outlier-badge">561 Total Handled</span>
+            </div>
+            <div class="overflow-x-auto max-h-64">
+              <table class="w-full text-left border-collapse text-[11px]">
+                <thead class="bg-stone-50 text-stone-600 uppercase text-[10px] border-b border-stone-200 sticky top-0">
+                  <tr>
+                    <th class="py-2 px-3">Feature</th>
+                    <th class="py-2 px-2.5">Explicit Threshold Rule</th>
+                    <th class="py-2 px-2.5 text-right">Rows</th>
+                    <th class="py-2 px-3">Action Taken</th>
+                  </tr>
+                </thead>
+                <tbody id="etl-outliers-tbody" class="divide-y divide-stone-100 text-stone-700 bg-white"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel C & D: Missing Values Per Column Before/After & Feature Encoding Scheme -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <!-- Panel C: Missing Values Per Column Before vs. After Cleaning -->
+          <div class="border border-stone-200 rounded-lg overflow-hidden bg-stone-50/40">
+            <div class="px-3.5 py-2.5 bg-stone-100 border-b border-stone-200 flex items-center justify-between">
+              <span class="text-xs font-semibold text-stone-800">
+                C. Missing Values Per Column (Before vs. After Cleaning &amp; Train-Only Imputation)
+              </span>
+              <span class="text-[10px] font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">0 Remaining Nulls in Features</span>
+            </div>
+            <div class="overflow-x-auto max-h-64">
+              <table class="w-full text-left border-collapse text-[11px]">
+                <thead class="bg-stone-50 text-stone-600 uppercase text-[10px] border-b border-stone-200 sticky top-0">
+                  <tr>
+                    <th class="py-2 px-2.5">Column</th>
+                    <th class="py-2 px-2 text-right">Raw FULL Missing</th>
+                    <th class="py-2 px-2 text-right">Pre-Impute (Sales)</th>
+                    <th class="py-2 px-2 text-right">After Clean</th>
+                    <th class="py-2 px-2.5">Train-Only Imputation Strategy</th>
+                  </tr>
+                </thead>
+                <tbody id="etl-missing-tbody" class="divide-y divide-stone-100 text-stone-700 bg-white"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Panel D: Feature Encoding, Transformation & Leakage-Prevention Scheme -->
+          <div class="border border-stone-200 rounded-lg overflow-hidden bg-stone-50/40">
+            <div class="px-3.5 py-2.5 bg-stone-100 border-b border-stone-200 flex items-center justify-between">
+              <span class="text-xs font-semibold text-stone-800">
+                D. Feature Encoding, Scaling &amp; Leakage-Prevention Specification
+              </span>
+              <span class="text-[10px] font-medium text-blue-900 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">31 Features &rarr; 76 Transformed Cols</span>
+            </div>
+            <div class="overflow-x-auto max-h-64">
+              <table class="w-full text-left border-collapse text-[11px]">
+                <thead class="bg-stone-50 text-stone-600 uppercase text-[10px] border-b border-stone-200 sticky top-0">
+                  <tr>
+                    <th class="py-2 px-2.5">Feature Group</th>
+                    <th class="py-2 px-2.5">Encoding / Scaling Method</th>
+                    <th class="py-2 px-2.5">Zero-Leakage Safeguard</th>
+                  </tr>
+                </thead>
+                <tbody id="etl-encoding-tbody" class="divide-y divide-stone-100 text-stone-700 bg-white"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-stone-200">
+          <span class="text-xs font-semibold text-stone-700">Inspect Dimensional Star Schema Tables (Sample 15 Rows):</span>
+          <div class="flex flex-wrap gap-1.5" id="etl-table-buttons">
+            <button type="button" data-table="Fact_PropertySale" onclick="loadETLTable('Fact_PropertySale')" class="etl-tbl-btn table-btn-active px-2.5 py-1 rounded border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-medium transition">Fact_PropertySale</button>
+            <button type="button" data-table="Dim_Property" onclick="loadETLTable('Dim_Property')" class="etl-tbl-btn px-2.5 py-1 rounded border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-medium transition">Dim_Property</button>
+            <button type="button" data-table="Dim_Location" onclick="loadETLTable('Dim_Location')" class="etl-tbl-btn px-2.5 py-1 rounded border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-medium transition">Dim_Location</button>
+            <button type="button" data-table="Dim_Date" onclick="loadETLTable('Dim_Date')" class="etl-tbl-btn px-2.5 py-1 rounded border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-medium transition">Dim_Date</button>
+            <button type="button" data-table="Dim_Market" onclick="loadETLTable('Dim_Market')" class="etl-tbl-btn px-2.5 py-1 rounded border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-medium transition">Dim_Market</button>
+            <button type="button" data-table="Fact_UnseenProperty" onclick="loadETLTable('Fact_UnseenProperty')" class="etl-tbl-btn px-2.5 py-1 rounded border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-medium transition">Fact_UnseenProperty</button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto max-h-72 border border-stone-200 rounded-lg">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead id="etl-thead" class="bg-stone-100 text-stone-600 uppercase text-[10px] sticky top-0"></thead>
+            <tbody id="etl-tbody" class="divide-y divide-stone-100 text-stone-700"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script>
+    let OPTIONS = { regions: [], suburbs: [] };
+    let SUBURB_LOOKUP = {};
+
+    function makeLayout(overrides = {}) {
+      return {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { family: 'DM Sans, sans-serif', color: '#44403c', size: 11 },
+        margin: overrides.margin || { t: 16, r: 20, b: 40, l: 65 },
+        barmode: overrides.barmode,
+        legend: overrides.legend,
+        xaxis: {
+          gridcolor: '#f5f5f4',
+          zerolinecolor: '#d6d3d1',
+          ...(overrides.xaxis || {}),
+        },
+        yaxis: {
+          gridcolor: '#f5f5f4',
+          zerolinecolor: '#d6d3d1',
+          ...(overrides.yaxis || {}),
+        },
+      };
+    }
+
+    function fmtMoney(val) {
+      if (val === null || val === undefined || isNaN(val)) return '$0';
+      const n = Math.round(Number(val));
+      if (n < 0) return '-$' + Math.abs(n).toLocaleString('en-US');
+      return '$' + n.toLocaleString('en-US');
+    }
+
+    function syncSlider(inputId, sliderId) {
+      const inp = document.getElementById(inputId);
+      const sld = document.getElementById(sliderId);
+      if (inp && sld) {
+        sld.value = inp.value;
+      }
+    }
+
+    function syncInput(sliderId, inputId) {
+      const sld = document.getElementById(sliderId);
+      const inp = document.getElementById(inputId);
+      if (sld && inp) {
+        inp.value = sld.value;
+      }
+    }
+
+    function switchTab(tabId) {
+      ['estimator', 'dashboard', 'system'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        const dBtn = document.getElementById(`tab-btn-${t}`);
+        if (dBtn) dBtn.classList.remove('active');
+      });
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      const activeDBtn = document.getElementById(`tab-btn-${tabId}`);
+      if (activeDBtn) activeDBtn.classList.add('active');
+
+      if (tabId === 'dashboard') loadDashboard();
+      if (tabId === 'system') {
+        refreshStatus(false);
+        loadETLTable('Fact_PropertySale');
+      }
+    }
+
+    async function init() {
+      const res = await fetch('/api/options');
+      OPTIONS = await res.json();
+      OPTIONS.suburbs.forEach(s => { SUBURB_LOOKUP[s.suburb] = s; });
+
+      const reqReg = document.getElementById('req-region');
+      const biReg = document.getElementById('bi-region');
+      OPTIONS.regions.forEach(r => {
+        reqReg.insertAdjacentHTML('beforeend', `<option value="${r.region}">${r.region}</option>`);
+        biReg.insertAdjacentHTML('beforeend', `<option value="${r.region}">${r.region}</option>`);
+      });
+
+      populateSuburbs('ALL', 'Richmond');
+      await refreshStatus(false);
+      await runValuation();
+    }
+
+    function populateSuburbs(region, selectedSuburb = null) {
+      const sel = document.getElementById('req-suburb');
+      sel.innerHTML = '';
+      const list = region === 'ALL' ? OPTIONS.suburbs : OPTIONS.suburbs.filter(s => s.region === region);
+      list.forEach(s => {
+        const isSel = selectedSuburb && s.suburb === selectedSuburb ? 'selected' : '';
+        sel.insertAdjacentHTML('beforeend', `<option value="${s.suburb}" ${isSel}>${s.suburb} (Median: ${fmtMoney(s.median_price)})</option>`);
+      });
+    }
+
+    function onRegionChange() {
+      populateSuburbs(document.getElementById('req-region').value);
+      runValuation();
+    }
+
+    function onTypeChange() {
+      const t = document.getElementById('req-type').value;
+      if (t === 'u') {
+        document.getElementById('req-landsize').value = 120;
+        document.getElementById('req-landsize-slider').value = 120;
+        document.getElementById('req-building-area').value = 80;
+        document.getElementById('req-building-area-slider').value = 80;
+      } else if (t === 't') {
+        document.getElementById('req-landsize').value = 220;
+        document.getElementById('req-landsize-slider').value = 220;
+        document.getElementById('req-building-area').value = 140;
+        document.getElementById('req-building-area-slider').value = 140;
+      } else {
+        document.getElementById('req-landsize').value = 450;
+        document.getElementById('req-landsize-slider').value = 450;
+        document.getElementById('req-building-area').value = 160;
+        document.getElementById('req-building-area-slider').value = 160;
+      }
+      runValuation();
+    }
+
+    function applyQuickExample(type) {
+      document.getElementById('req-region').value = 'ALL';
+      if (type === 'family') {
+        populateSuburbs('ALL', 'Richmond');
+        document.getElementById('req-type').value = 'h';
+        document.getElementById('req-rooms').value = '3';
+        document.getElementById('req-bathrooms').value = '2';
+        document.getElementById('req-cars').value = '2';
+        document.getElementById('req-landsize').value = 320;
+        document.getElementById('req-landsize-slider').value = 320;
+        document.getElementById('req-building-area').value = 155;
+        document.getElementById('req-building-area-slider').value = 155;
+        document.getElementById('req-year-built').value = 1935;
+        document.getElementById('req-rate').value = '1.50';
+      } else if (type === 'apartment') {
+        populateSuburbs('ALL', 'South Yarra');
+        document.getElementById('req-type').value = 'u';
+        document.getElementById('req-rooms').value = '2';
+        document.getElementById('req-bathrooms').value = '1';
+        document.getElementById('req-cars').value = '1';
+        document.getElementById('req-landsize').value = 120;
+        document.getElementById('req-landsize-slider').value = 120;
+        document.getElementById('req-building-area').value = 75;
+        document.getElementById('req-building-area-slider').value = 75;
+        document.getElementById('req-year-built').value = 2005;
+        document.getElementById('req-rate').value = '1.50';
+      } else if (type === 'large') {
+        populateSuburbs('ALL', 'Kew');
+        document.getElementById('req-type').value = 'h';
+        document.getElementById('req-rooms').value = '4';
+        document.getElementById('req-bathrooms').value = '3';
+        document.getElementById('req-cars').value = '2';
+        document.getElementById('req-landsize').value = 680;
+        document.getElementById('req-landsize-slider').value = 680;
+        document.getElementById('req-building-area').value = 280;
+        document.getElementById('req-building-area-slider').value = 280;
+        document.getElementById('req-year-built').value = 1965;
+        document.getElementById('req-rate').value = '1.50';
+      }
+      runValuation();
+    }
+
+    async function runValuation() {
+      const sub = document.getElementById('req-suburb').value;
+      const subInfo = SUBURB_LOOKUP[sub];
+      if (subInfo) {
+        document.getElementById('suburb-helper-text').textContent =
+          `${subInfo.region} · ${subInfo.distance_km} km from CBD · ${subInfo.council_area} (Postcode ${subInfo.postcode})`;
+      }
+
+      const payload = {
+        suburb: sub,
+        property_type: document.getElementById('req-type').value,
+        rooms: parseInt(document.getElementById('req-rooms').value, 10),
+        bathrooms: parseInt(document.getElementById('req-bathrooms').value, 10),
+        car_spaces: parseInt(document.getElementById('req-cars').value, 10),
+        landsize: parseFloat(document.getElementById('req-landsize').value),
+        building_area: parseFloat(document.getElementById('req-building-area').value),
+        year_built: parseInt(document.getElementById('req-year-built').value, 10),
+        interest_rate: parseFloat(document.getElementById('req-rate').value),
+        selected_model: document.getElementById('req-model').value || 'xgboost',
+      };
+
+      const res = await fetch('/api/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      const r = data.resolved_inputs;
+      const p = data.prescriptive_insights;
+
+      document.getElementById('out-title').textContent =
+        `${r.rooms}-Bedroom ${r.property_type_label.split('/')[0].trim()} in ${r.suburb}`;
+      document.getElementById('out-subtitle').textContent =
+        `${r.region} · ${r.distance_cbd_km} km from CBD · Postcode ${r.postcode} · ${r.bathrooms} Bath · ${r.car_spaces} Car · ${Math.round(r.landsize)} m² Land · ${Math.round(r.building_area)} m² Floor`;
+      document.getElementById('out-price').textContent = fmtMoney(data.predicted_price);
+      const ci = data.confidence_interval_95 || {};
+      document.getElementById('out-range').textContent =
+        `95% Conformal Interval: ${fmtMoney(ci.low)} – ${fmtMoney(ci.high)}`;
+      const ttIcon = document.getElementById('out-range-tooltip-icon');
+      const ttBox = document.getElementById('out-range-tooltip-box');
+      if (ci.tooltip) {
+        if (ttIcon) ttIcon.setAttribute('title', ci.tooltip);
+        if (ttBox) ttBox.textContent = ci.tooltip;
+      }
+
+      // 4 Academic & BI Metrics (Assignment 1 Section 2.3 & Section 2.6)
+      document.getElementById('out-suburb-median').textContent = fmtMoney(r.suburb_median_price);
+      document.getElementById('out-suburb-median-sub').textContent =
+        `Same-Type Med: ${fmtMoney(r.suburb_type_median_price || r.suburb_median_price)}`;
+
+      const ratioPct = r.floor_to_land_ratio_pct !== undefined
+        ? Number(r.floor_to_land_ratio_pct).toFixed(1)
+        : ((r.building_area / Math.max(r.landsize, 1)) * 100).toFixed(1);
+      document.getElementById('out-engineered-age-ratio').textContent =
+        `${r.property_age} yrs · ${ratioPct}% Ratio`;
+      document.getElementById('out-engineered-sub').textContent =
+        `Built ${r.year_built} (${Math.round(r.building_area)}m² / ${Math.round(r.landsize)}m²)`;
+
+      document.getElementById('out-cbd-distance').textContent = `${r.distance_cbd_km} km from CBD`;
+      document.getElementById('out-cbd-distance-sub').textContent =
+        `${r.council_area}`;
+
+      const r2Pct = r.champion_test_r2_pct || 81.8;
+      const testMae = r.champion_test_mae || 149771;
+      const testMape = r.champion_test_mape_pct !== undefined ? `${Number(r.champion_test_mape_pct).toFixed(1)}%` : '';
+      document.getElementById('out-champion-error').textContent =
+        testMape ? `R² = ${r2Pct}% | MAE = ${fmtMoney(testMae)} | MAPE = ${testMape}` : `R² = ${r2Pct}% | MAE = ${fmtMoney(testMae)}`;
+
+      document.getElementById('out-plain-summary').textContent = p.recommendation;
+
+      // Save latest prediction payload for local TreeSHAP vs Global Feature Importance toggle
+      window.LAST_PREDICTION_DATA = data;
+      renderHedonicChart(window.HEDONIC_CHART_MODE || 'local');
+
+      // Right Chart: Cross-Model Valuation Comparison (4 Bars & Dollar Labels Fully Visible Without Clipping)
+      const m = data.all_model_predictions;
+      const keys = ['xgboost', 'random_forest', 'decision_tree', 'linear_regression'];
+      const labels = ['XGBoost', 'Random Forest', 'Decision Tree', 'Linear Reg.'];
+      const vals = keys.map(k => Number(m[k].price));
+      const maxModelVal = Math.max(...vals, 100000);
+
+      Plotly.newPlot('chart-four-models', [{
+        type: 'bar',
+        x: labels,
+        y: vals,
+        text: vals.map(v => fmtMoney(v)),
+        textposition: 'outside',
+        cliponaxis: false,
+        hovertemplate: '%{x}<br>Predicted Price: %{text}<extra></extra>',
+        marker: { color: ['#1e3a8a', '#2563eb', '#475569', '#94a3b8'] },
+      }], makeLayout({
+        margin: { t: 32, r: 20, b: 42, l: 68 },
+        xaxis: { type: 'category', tickangle: 0 },
+        yaxis: {
+          type: 'linear',
+          range: [0, maxModelVal * 1.24],
+          tickprefix: '$',
+        },
+      }), { displayModeBar: false, responsive: true });
+
+      // Comparable Settled Sales - Full Width 4-Column Responsive Grid, Zero Mid-Word/Mid-Date Wrapping
+      const comps = data.comparable_properties || [];
+      const testCompsCount = comps.filter(c => c.DataSplit === 'Test').length;
+      document.getElementById('comps-badge').textContent =
+        `${comps.length} Comparable Sales (${testCompsCount} Holdout Test · ${comps.length - testCompsCount} 5-Fold OOF)`;
+      const grid = document.getElementById('similar-homes-grid');
+      grid.innerHTML = comps.map(c => {
+        const salePrice = Number(c.SalePrice || 0);
+        const predPrice = Number(c.PredictedPrice || 0);
+        const isBargain = c.ValuationStatus === 'Undervalued Opportunity' || predPrice > salePrice * 1.04;
+        const tagHtml = isBargain
+          ? `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 shrink-0 whitespace-nowrap">Undervalued</span>`
+          : `<span class="px-2 py-0.5 rounded text-[10px] font-medium bg-stone-100 text-stone-700 border border-stone-200 shrink-0 whitespace-nowrap">Market Aligned</span>`;
+        const splitHtml = c.DataSplit === 'Test'
+          ? `<span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-900 border border-blue-200 whitespace-nowrap">Holdout Test</span>`
+          : `<span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-stone-100 text-stone-600 border border-stone-200 whitespace-nowrap">5-Fold OOF</span>`;
+        const typeShort = (c.PropertyTypeLabel || 'House').split('/')[0].trim();
+        return `
+          <div class="p-4 rounded-lg border border-stone-200 hover:border-stone-400 bg-stone-50/40 h-full flex flex-col justify-between transition">
+            <div>
+              <div class="flex items-start justify-between gap-2">
+                <span class="font-semibold text-sm text-stone-900 leading-snug">${c.Address}</span>
+                ${tagHtml}
+              </div>
+              <div class="text-xs text-stone-500 mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                <span>${c.Suburb} · ${typeShort}</span>
+                <span>·</span>
+                <span class="whitespace-nowrap">Settled ${c.SaleDate}</span>
+                ${splitHtml}
+              </div>
+              <div class="flex flex-wrap gap-1.5 mt-2.5">
+                <span class="px-2 py-0.5 rounded bg-white border border-stone-200 text-[11px] text-stone-700 whitespace-nowrap">
+                  ${c.Rooms} Bed · ${Math.round(c.Bathrooms)} Bath · ${Math.round(c.CarSpaces)} Car
+                </span>
+                <span class="px-2 py-0.5 rounded bg-white border border-stone-200 text-[11px] text-stone-700 whitespace-nowrap">
+                  ${Math.round(c.LandArea)} m² Land · ${Math.round(c.FloorArea)} m² Floor
+                </span>
+              </div>
+            </div>
+            <div class="mt-3.5 pt-2.5 border-t border-stone-200/80 flex items-end justify-between gap-2">
+              <div>
+                <div class="text-[10px] uppercase tracking-wider text-stone-400 font-medium">Actual Sale</div>
+                <div class="text-base font-bold text-stone-900 whitespace-nowrap">${fmtMoney(salePrice)}</div>
+              </div>
+              <div class="text-right">
+                <div class="text-[10px] uppercase tracking-wider text-stone-400 font-medium">Predicted (${c.DataSplit === 'Test' ? 'Holdout' : 'OOF'})</div>
+                <div class="text-sm font-semibold text-blue-900 whitespace-nowrap">${fmtMoney(predPrice)}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function switchHedonicMode(mode) {
+      window.HEDONIC_CHART_MODE = mode;
+      const btnLocal = document.getElementById('btn-shap-local');
+      const btnGlobal = document.getElementById('btn-shap-global');
+      if (btnLocal && btnGlobal) {
+        if (mode === 'global') {
+          btnGlobal.className = 'px-2 py-0.5 rounded bg-blue-900 text-white transition';
+          btnLocal.className = 'px-2 py-0.5 rounded text-stone-700 hover:bg-stone-200 transition';
+        } else {
+          btnLocal.className = 'px-2 py-0.5 rounded bg-blue-900 text-white transition';
+          btnGlobal.className = 'px-2 py-0.5 rounded text-stone-700 hover:bg-stone-200 transition';
+        }
+      }
+      renderHedonicChart(mode);
+    }
+
+    function renderHedonicChart(mode = 'local') {
+      const data = window.LAST_PREDICTION_DATA;
+      if (!data) return;
+
+      const subEl = document.getElementById('chart-why-price-sub');
+      if (mode === 'global') {
+        const gItems = (data.global_feature_importance || []).slice().reverse();
+        const maxPct = Math.max(...gItems.map(g => Number(g.importance_pct)), 20);
+        if (subEl) {
+          subEl.textContent = 'Global Feature Importance (XGBoost Champion): Relative gain/split importance across the 5 hedonic categories';
+        }
+        Plotly.newPlot('chart-why-price', [{
+          type: 'bar',
+          orientation: 'h',
+          y: gItems.map(g => g.factor),
+          x: gItems.map(g => Number(g.importance_pct)),
+          text: gItems.map(g => `${Number(g.importance_pct).toFixed(1)}%`),
+          textposition: 'outside',
+          cliponaxis: false,
+          hovertemplate: '%{y}<br>Global Importance: %{text}<extra></extra>',
+          marker: { color: ['#94a3b8', '#64748b', '#3b82f6', '#1d4ed8', '#1e3a8a'] },
+        }], makeLayout({
+          margin: { t: 14, r: 65, b: 36, l: 135 },
+          xaxis: {
+            type: 'linear',
+            range: [0, maxPct * 1.28],
+            ticksuffix: '%',
+          },
+          yaxis: { type: 'category' },
+        }), { displayModeBar: false, responsive: true });
+        return;
+      }
+
+      // Local TreeSHAP mode: real per-prediction SHAP contributions
+      const drivers = (data.xai_drivers || []).slice().reverse();
+      const deltas = drivers.map(d => Number(d.shap_delta !== undefined ? d.shap_delta : d.impact));
+      const baseVal = Number(data.shap_base_value || 0);
+      const netShap = deltas.reduce((acc, v) => acc + v, 0);
+      if (subEl) {
+        const signStr = netShap >= 0 ? '+' : '';
+        subEl.textContent = `TreeSHAP: Baseline E[f(X)] ${fmtMoney(baseVal)} ${signStr} ${fmtMoney(netShap)} Net SHAP = ${fmtMoney(data.predicted_price)}`;
+      }
+
+      const maxPos = Math.max(...deltas, 50000);
+      const minNeg = Math.min(...deltas, 0);
+      const span = Math.max(maxPos - minNeg, 100000);
+      const xMin = minNeg < 0 ? minNeg - span * 0.42 : 0;
+      const xMax = maxPos + span * 0.42;
+
+      Plotly.newPlot('chart-why-price', [{
+        type: 'bar',
+        orientation: 'h',
+        y: drivers.map(d => d.factor),
+        x: deltas,
+        text: drivers.map(d => {
+          const val = Number(d.shap_delta !== undefined ? d.shap_delta : d.impact);
+          const prefix = val >= 0 ? '+' : '';
+          return `${prefix}${fmtMoney(val)} (${d.share_pct}%)`;
+        }),
+        textposition: 'outside',
+        cliponaxis: false,
+        hovertemplate: '%{y}<br>SHAP Contribution: %{text}<extra></extra>',
+        marker: {
+          color: deltas.map(v => (v >= 0 ? '#1e3a8a' : '#d97706')),
+        },
+      }], makeLayout({
+        margin: { t: 14, r: 95, b: 36, l: 135 },
+        xaxis: {
+          type: 'linear',
+          range: [xMin, xMax],
+          tickprefix: '$',
+        },
+        yaxis: { type: 'category' },
+      }), { displayModeBar: false, responsive: true });
+    }
+
+    // ===================================================================
+    // TAB 2: BI DECISION SUPPORT DASHBOARD
+    // ===================================================================
+    function resetDashboardFilters() {
+      const splitEl = document.getElementById('bi-split');
+      if (splitEl) splitEl.value = 'TEST';
+      document.getElementById('bi-region').value = 'ALL';
+      document.getElementById('bi-type').value = 'ALL';
+      document.getElementById('bi-rooms').value = 'ALL';
+      document.getElementById('bi-max-price').value = 'ALL';
+      const searchEl = document.getElementById('bi-unseen-search');
+      const sortEl = document.getElementById('bi-unseen-sort');
+      if (searchEl) searchEl.value = '';
+      if (sortEl) sortEl.value = 'opportunity';
+      loadDashboard();
+    }
+
+    async function loadDashboard() {
+      const splitEl = document.getElementById('bi-split');
+      const activeSplit = splitEl ? splitEl.value : 'TEST';
+      const searchEl = document.getElementById('bi-unseen-search');
+      const sortEl = document.getElementById('bi-unseen-sort');
+      const params = new URLSearchParams({
+        split: activeSplit,
+        region: document.getElementById('bi-region').value,
+        property_type: document.getElementById('bi-type').value,
+        rooms: document.getElementById('bi-rooms').value,
+        max_price: document.getElementById('bi-max-price').value,
+        unseen_suburb: searchEl ? searchEl.value.trim() : '',
+        unseen_sort: sortEl ? sortEl.value : 'opportunity',
+      });
+
+      const res = await fetch(`/api/dashboard?${params.toString()}`);
+      const d = await res.json();
+      const k = d.kpis;
+      const hm = d.holdout_metrics || {};
+      const holdoutR2 = hm.R2 ? (Number(hm.R2) * 100).toFixed(1) : '81.8';
+      const holdoutMae = hm.MAE ? fmtMoney(hm.MAE) : '$149,771';
+      const holdoutRmse = hm.RMSE ? fmtMoney(hm.RMSE) : '$250,353';
+
+      const splitBadge = document.getElementById('bi-split-badge');
+      const salesLabel = document.getElementById('bi-kpi-sales-label');
+      const salesSub = document.getElementById('bi-kpi-sales-sub');
+      if (activeSplit === 'TEST') {
+        if (splitBadge) splitBadge.textContent = 'Holdout Test Set Only (5,439 Sales · 20% Out-of-Sample)';
+        if (salesLabel) salesLabel.textContent = 'Holdout Test Sales (Fact_PropertySale)';
+        if (salesSub) salesSub.textContent = '20% Holdout Test split (unseen during training)';
+      } else if (activeSplit === 'TRAIN') {
+        if (splitBadge) splitBadge.textContent = 'Train 5-Fold Out-of-Fold Only (21,753 Sales · 80% OOF)';
+        if (salesLabel) salesLabel.textContent = 'Train 5-Fold OOF Sales (Fact_PropertySale)';
+        if (salesSub) salesSub.textContent = '80% Train split scored via 5-fold cross_val_predict';
+      } else {
+        if (splitBadge) splitBadge.textContent = 'All Out-of-Sample Sales (5-Fold OOF + Holdout Test · 27,192 Sales)';
+        if (salesLabel) salesLabel.textContent = 'Validated Property Sales (Fact_PropertySale)';
+        if (salesSub) salesSub.textContent = '21,753 5-Fold OOF + 5,439 Holdout Test sales';
+      }
+
+      // 4 KPI Cards with exact Star Schema numbers
+      document.getElementById('bi-kpi-sales').textContent = k.total_sales.toLocaleString();
+      document.getElementById('bi-kpi-actual').textContent = fmtMoney(k.avg_actual_price);
+      document.getElementById('bi-kpi-pred').textContent = fmtMoney(k.avg_predicted_price);
+      document.getElementById('bi-kpi-mae').textContent = fmtMoney(k.overall_mae_slice || k.mae_slice);
+      document.getElementById('bi-kpi-undervalued-sub').textContent =
+        `Holdout R² = ${holdoutR2}% | Holdout MAE = ${holdoutMae} | RMSE = ${holdoutRmse}`;
+
+      // Chart 1 (Top-Left): Actual Sale Price (SalePrice) vs. Predicted Price (PredictedPrice) by Region
+      const reg = d.regional_chart || [];
+      Plotly.newPlot('bi-chart-regional', [
+        {
+          name: 'Actual Sale Price (SalePrice)',
+          type: 'bar',
+          x: reg.map(r => r.label),
+          y: reg.map(r => Number(r.avg_actual)),
+          marker: { color: '#15803d' },
+          hovertemplate: '%{x}<br>Actual SalePrice: $%{y:,.0f}<extra></extra>',
+        },
+        {
+          name: 'Predicted Price (PredictedPrice)',
+          type: 'bar',
+          x: reg.map(r => r.label),
+          y: reg.map(r => Number(r.avg_predicted)),
+          marker: { color: '#1e3a8a' },
+          hovertemplate: '%{x}<br>PredictedPrice: $%{y:,.0f}<extra></extra>',
+        },
+      ], makeLayout({
+        barmode: 'group',
+        margin: { t: 28, r: 18, b: 68, l: 65 },
+        legend: { orientation: 'h', y: 1.14 },
+        xaxis: { type: 'category', tickangle: -20 },
+        yaxis: { type: 'linear', rangemode: 'tozero', tickprefix: '$' },
+      }), { displayModeBar: false, responsive: true });
+
+      // Chart 2 (Top-Right): Quarterly Price Trajectory: Actual vs. Predicted Price Over Time (Dim_Date & Dim_Market)
+      const tr = d.temporal_trend || [];
+      Plotly.newPlot('bi-chart-trend', [
+        {
+          name: 'Actual SalePrice',
+          type: 'scatter',
+          mode: 'lines+markers',
+          x: tr.map(t => t.period),
+          y: tr.map(t => Number(t.avg_actual)),
+          line: { color: '#15803d', width: 2.5 },
+          hovertemplate: '%{x}<br>Mean SalePrice: $%{y:,.0f}<extra></extra>',
+        },
+        {
+          name: 'PredictedPrice (XGBoost)',
+          type: 'scatter',
+          mode: 'lines+markers',
+          x: tr.map(t => t.period),
+          y: tr.map(t => Number(t.avg_predicted)),
+          line: { color: '#1e3a8a', width: 2.5, dash: 'dot' },
+          hovertemplate: '%{x}<br>Mean PredictedPrice: $%{y:,.0f}<extra></extra>',
+        },
+      ], makeLayout({
+        margin: { t: 28, r: 18, b: 48, l: 65 },
+        legend: { orientation: 'h', y: 1.14 },
+        xaxis: { type: 'category', title: 'Year-Quarter (Dim_Date)' },
+        yaxis: { type: 'linear', tickprefix: '$' },
+      }), { displayModeBar: false, responsive: true });
+
+      // Chart 3 (Bottom-Left): Actual vs. Predicted Price Scatter Plot (Model Fit & 45° Parity Line)
+      const sc = d.scatter_points || [];
+      const maxAxisVal = sc.length
+        ? Math.min(4500000, Math.max(...sc.map(p => Math.max(Number(p.actual_price), Number(p.predicted_price)))))
+        : 3500000;
+      const scatterTraceName = activeSplit === 'TRAIN'
+        ? 'Train 5-Fold OOF Properties'
+        : (activeSplit === 'ALL' ? 'Out-of-Sample Properties' : 'Holdout Test Properties');
+
+      Plotly.newPlot('bi-chart-scatter', [
+        {
+          name: scatterTraceName,
+          type: 'scatter',
+          mode: 'markers',
+          x: sc.map(p => Number(p.actual_price)),
+          y: sc.map(p => Number(p.predicted_price)),
+          text: sc.map(p => `${p.address}, ${p.suburb} (${p.rooms} Bed ${p.type_label.split('/')[0]} · ${p.data_split || 'Test'})<br>Actual: ${fmtMoney(p.actual_price)} | Predicted: ${fmtMoney(p.predicted_price)}`),
+          hoverinfo: 'text',
+          marker: {
+            size: 6.5,
+            opacity: 0.7,
+            color: '#1e3a8a',
+            line: { width: 0.5, color: '#ffffff' },
+          },
+        },
+        {
+          name: '45° Parity Line (ŷ = y)',
+          type: 'scatter',
+          mode: 'lines',
+          x: [120000, maxAxisVal],
+          y: [120000, maxAxisVal],
+          line: { color: '#dc2626', width: 2, dash: 'dash' },
+          hoverinfo: 'skip',
+        },
+      ], makeLayout({
+        margin: { t: 28, r: 20, b: 48, l: 68 },
+        legend: { orientation: 'h', y: 1.14 },
+        xaxis: { type: 'linear', title: 'Actual Sale Price (SalePrice)', tickprefix: '$', range: [100000, maxAxisVal * 1.05] },
+        yaxis: { type: 'linear', title: 'Predicted Price (PredictedPrice)', tickprefix: '$', range: [100000, maxAxisVal * 1.05] },
+      }), { displayModeBar: false, responsive: true });
+
+      // Chart 4 (Bottom-Right): Mean Absolute Prediction Error (AbsoluteError) by Property Type & Bedroom Count
+      const errRows = d.error_by_type_rooms || [];
+      const bedBuckets = ['1 Bed', '2 Bed', '3 Bed', '4 Bed', '5+ Bed'];
+      const typeConfigs = [
+        { code: 'h', label: 'House (h)', color: '#1e3a8a' },
+        { code: 't', label: 'Townhouse (t)', color: '#2563eb' },
+        { code: 'u', label: 'Unit / Apt (u)', color: '#15803d' },
+      ];
+
+      const errTraces = typeConfigs.map(tc => {
+        const yVals = bedBuckets.map(b => {
+          const found = errRows.find(r => r.type_code === tc.code && r.bedroom_group === b);
+          return found ? Number(found.mean_abs_error) : null;
+        });
+        return {
+          name: tc.label,
+          type: 'bar',
+          x: bedBuckets,
+          y: yVals,
+          marker: { color: tc.color },
+          hovertemplate: `%{x} — ${tc.label}<br>Mean AbsoluteError: $%{y:,.0f}<extra></extra>`,
+        };
+      });
+
+      Plotly.newPlot('bi-chart-error-type-rooms', errTraces, makeLayout({
+        barmode: 'group',
+        margin: { t: 28, r: 18, b: 48, l: 65 },
+        legend: { orientation: 'h', y: 1.14 },
+        xaxis: { type: 'category', title: 'Bedroom Count (Dim_Property)' },
+        yaxis: { type: 'linear', rangemode: 'tozero', tickprefix: '$', title: 'Mean AbsoluteError ($)' },
+      }), { displayModeBar: false, responsive: true });
+
+      // Bottom Table: Unseen Properties Scored (Fact_UnseenProperty — 7,607 Listings)
+      // Compare against training median for the SAME suburb and dwelling type (SuburbTypeMedianPrice)
+      let unseenRows = (d.unseen_predictions || []).map(u => {
+        const predVal = Number(u.PredictedPrice_XGB || 0);
+        const subProf = SUBURB_LOOKUP[u.Suburb];
+        const typeMedFromProf = subProf && subProf.type_medians ? subProf.type_medians[u.Type] : null;
+        const subTypeMed = Number(u.SuburbTypeMedianPrice || typeMedFromProf || u.SuburbMedianPrice || predVal);
+        return { ...u, _predVal: predVal, _subTypeMed: subTypeMed, _upside: subTypeMed - predVal };
+      });
+
+      const activeSort = sortEl ? sortEl.value : 'opportunity';
+      if (activeSort === 'price_asc') {
+        unseenRows.sort((a, b) => a._predVal - b._predVal);
+      } else if (activeSort === 'price_desc') {
+        unseenRows.sort((a, b) => b._predVal - a._predVal);
+      } else if (activeSort === 'suburb_asc') {
+        unseenRows.sort((a, b) => String(a.Suburb).localeCompare(String(b.Suburb)));
+      } else {
+        unseenRows.sort((a, b) => b._upside - a._upside);
+      }
+
+      const totalUnseen = k.unseen_scored_total || 7607;
+      const filteredUnseen = k.unseen_filtered_count !== undefined ? k.unseen_filtered_count : totalUnseen;
+      document.getElementById('unseen-table-badge').textContent =
+        `${filteredUnseen.toLocaleString()} of ${totalUnseen.toLocaleString()} Unseen Listings Matched`;
+
+      document.getElementById('bi-unseen-tbody').innerHTML = unseenRows.map(u => {
+        const predVal = u._predVal;
+        const subTypeMed = u._subTypeMed;
+        let badgeHtml = '';
+        if (predVal < subTypeMed * 0.92) {
+          badgeHtml = `<span class="ml-1.5 px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">Below Typical for Type</span>`;
+        } else if (predVal <= subTypeMed * 1.08) {
+          badgeHtml = `<span class="ml-1.5 px-2 py-0.5 rounded text-[10px] font-medium bg-stone-100 text-stone-700 border border-stone-200">Typical Range for Type</span>`;
+        } else {
+          badgeHtml = `<span class="ml-1.5 px-2 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-200">Above Typical for Type</span>`;
+        }
+        const typeUpper = String(u.Type || 'h').toUpperCase();
+        return `
+          <tr class="hover:bg-stone-50">
+            <td class="py-2.5 px-3">
+              <div class="font-semibold text-stone-900">${u.Suburb}${badgeHtml}</div>
+              <div class="text-[11px] text-stone-500">${u.Address || ''} (${u.Regionname || ''})</div>
+            </td>
+            <td class="py-2.5 px-3">
+              <span class="font-medium text-stone-800">${(u.PropertyTypeLabel || u.Type || '').split('/')[0].trim()}</span>
+              <span class="text-stone-400">(${u.Type})</span>
+            </td>
+            <td class="py-2.5 px-3 text-center font-medium">${u.Rooms}</td>
+            <td class="py-2.5 px-3 text-center">${Math.round(Number(u.Bathroom || 1))}</td>
+            <td class="py-2.5 px-3 text-right">${Math.round(Number(u.Landsize || 0)).toLocaleString()} m²</td>
+            <td class="py-2.5 px-3 text-right">${Math.round(Number(u.BuildingArea || 0)).toLocaleString()} m²</td>
+            <td class="py-2.5 px-3 text-right">
+              <div class="font-bold text-blue-950">${fmtMoney(predVal)}</div>
+              <div class="text-[10px] text-stone-500">Same-Type Med (${typeUpper}): ${fmtMoney(subTypeMed)}</div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // ===================================================================
+    // TAB 3: MODELS & STAR SCHEMA PIPELINE
+    // ===================================================================
+    async function refreshStatus(spin = false) {
+      const icon = document.getElementById('ping-icon');
+      if (spin && icon) icon.classList.add('fa-spin');
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        document.getElementById('top-live-badge').textContent =
+          `${data.active_models_count}/${data.total_models_count} Models Active`;
+
+        const models = data.models || [];
+        const xgbModel = models.find(m => m.id === 'xgboost');
+        const champBadge = document.getElementById('system-champion-badge');
+        if (champBadge && xgbModel && xgbModel.test_metrics) {
+          const mapeStr = xgbModel.test_metrics.MAPE ? ` · MAPE = ${Number(xgbModel.test_metrics.MAPE).toFixed(1)}%` : '';
+          champBadge.textContent = `Champion: XGBoost (Holdout R² = ${(xgbModel.test_metrics.R2 * 100).toFixed(1)}%${mapeStr})`;
+        }
+
+        const grid = document.getElementById('system-models-grid');
+        if (grid) {
+          grid.innerHTML = models.map(m => {
+            const cv = m.cv_metrics || {};
+            const cvR2Mean = cv.R2_mean !== undefined ? (Number(cv.R2_mean) * 100).toFixed(1) : (m.test_metrics.R2 * 100).toFixed(1);
+            const cvR2Std = cv.R2_std !== undefined ? (Number(cv.R2_std) * 100).toFixed(1) : '0.8';
+            const cvMaeMean = cv.MAE_mean !== undefined ? fmtMoney(cv.MAE_mean) : fmtMoney(m.test_metrics.MAE);
+            const cvMaeStd = cv.MAE_std !== undefined ? fmtMoney(cv.MAE_std) : '$3,200';
+            const mapeVal = m.test_metrics.MAPE !== undefined ? `${Number(m.test_metrics.MAPE).toFixed(2)}%` : 'N/A';
+            return `
+              <div class="panel p-4">
+                <div class="flex items-center justify-between">
+                  <span class="text-sm font-semibold text-stone-900">${m.name}</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">${m.status_label}</span>
+                </div>
+                <p class="text-xs text-stone-500 mt-0.5">${m.role}</p>
+                <div class="mt-3 pt-3 border-t border-stone-100 grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span class="text-stone-400 block text-[10px]">Holdout Test R²</span>
+                    <strong class="text-stone-900">${(m.test_metrics.R2 * 100).toFixed(2)}%</strong>
+                  </div>
+                  <div>
+                    <span class="text-stone-400 block text-[10px]">5-Fold CV R² (Mean ± SD)</span>
+                    <strong class="text-blue-900">${cvR2Mean}% ± ${cvR2Std}%</strong>
+                  </div>
+                  <div>
+                    <span class="text-stone-400 block text-[10px]">Holdout Test MAE</span>
+                    <strong class="text-stone-900">${fmtMoney(m.test_metrics.MAE)}</strong>
+                  </div>
+                  <div>
+                    <span class="text-stone-400 block text-[10px]">Holdout Test RMSE</span>
+                    <strong class="text-stone-700">${fmtMoney(m.test_metrics.RMSE)}</strong>
+                  </div>
+                  <div>
+                    <span class="text-stone-400 block text-[10px]">Holdout Test MAPE</span>
+                    <strong class="text-emerald-800">${mapeVal}</strong>
+                  </div>
+                  <div>
+                    <span class="text-stone-400 block text-[10px]">5-Fold CV MAE (± SD)</span>
+                    <strong class="text-stone-700">${cvMaeMean} ± ${cvMaeStd}</strong>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+
+        // Render Model Performance Benchmark Charts (Test R², 5-Fold CV R², MAPE, MAE, RMSE & Global Feature Importance)
+        if (models.length > 0 && document.getElementById('system-chart-r2')) {
+          const labels = models.map(m => m.name.replace(' Regression', ''));
+          const r2Vals = models.map(m => Number((m.test_metrics.R2 * 100).toFixed(1)));
+          const cvR2Vals = models.map(m => Number(((m.cv_metrics?.R2_mean || m.test_metrics.R2) * 100).toFixed(1)));
+          const cvR2Stds = models.map(m => Number(((m.cv_metrics?.R2_std || 0.008) * 100).toFixed(2)));
+          const mapeVals = models.map(m => Number((m.test_metrics.MAPE || 15.0).toFixed(1)));
+          const maeVals = models.map(m => Math.round(Number(m.test_metrics.MAE)));
+          const rmseVals = models.map(m => Math.round(Number(m.test_metrics.RMSE)));
+
+          Plotly.newPlot('system-chart-r2', [
+            {
+              name: 'Holdout Test R² (%)',
+              type: 'bar',
+              x: labels,
+              y: r2Vals,
+              text: r2Vals.map(v => `${v.toFixed(1)}%`),
+              textposition: 'outside',
+              cliponaxis: false,
+              marker: { color: '#1e3a8a' },
+              hovertemplate: '%{x}<br>Holdout Test R²: %{text}<extra></extra>',
+            },
+            {
+              name: '5-Fold CV R² (Mean ± SD)',
+              type: 'bar',
+              x: labels,
+              y: cvR2Vals,
+              error_y: { type: 'data', array: cvR2Stds, visible: true, color: '#0f172a', thickness: 1.5, width: 4 },
+              marker: { color: '#3b82f6' },
+              hovertemplate: '%{x}<br>5-Fold CV R²: %{y:.1f}%<extra></extra>',
+            },
+            {
+              name: 'Holdout MAPE (%)',
+              type: 'bar',
+              x: labels,
+              y: mapeVals,
+              text: mapeVals.map(v => `${v.toFixed(1)}%`),
+              textposition: 'outside',
+              cliponaxis: false,
+              marker: { color: '#d97706' },
+              hovertemplate: '%{x}<br>Holdout Test MAPE: %{text}<extra></extra>',
+            },
+          ], makeLayout({
+            barmode: 'group',
+            margin: { t: 32, r: 18, b: 40, l: 48 },
+            legend: { orientation: 'h', y: 1.16, font: { size: 10 } },
+            xaxis: { type: 'category' },
+            yaxis: { type: 'linear', range: [0, 108], ticksuffix: '%' },
+          }), { displayModeBar: false, responsive: true });
+
+          const maxErr = Math.max(...rmseVals, 350000);
+          Plotly.newPlot('system-chart-errors', [
+            {
+              name: 'Test MAE ($)',
+              type: 'bar',
+              x: labels,
+              y: maeVals,
+              text: maeVals.map(v => fmtMoney(v)),
+              textposition: 'outside',
+              cliponaxis: false,
+              marker: { color: '#15803d' },
+              hovertemplate: '%{x}<br>Test MAE: %{text}<extra></extra>',
+            },
+            {
+              name: 'Test RMSE ($)',
+              type: 'bar',
+              x: labels,
+              y: rmseVals,
+              text: rmseVals.map(v => fmtMoney(v)),
+              textposition: 'outside',
+              cliponaxis: false,
+              marker: { color: '#1e3a8a' },
+              hovertemplate: '%{x}<br>Test RMSE: %{text}<extra></extra>',
+            },
+          ], makeLayout({
+            barmode: 'group',
+            margin: { t: 32, r: 18, b: 40, l: 65 },
+            legend: { orientation: 'h', y: 1.15 },
+            xaxis: { type: 'category' },
+            yaxis: { type: 'linear', range: [0, maxErr * 1.24], tickprefix: '$' },
+          }), { displayModeBar: false, responsive: true });
+
+          const featImp = (data.feature_importances || []).slice(0, 8).reverse();
+          if (featImp.length > 0 && document.getElementById('system-chart-feature-importance')) {
+            const maxImp = Math.max(...featImp.map(f => Number(f.importance_pct)), 15);
+            Plotly.newPlot('system-chart-feature-importance', [{
+              name: 'Importance (%)',
+              type: 'bar',
+              orientation: 'h',
+              y: featImp.map(f => String(f.feature).replace('Regionname_', 'Reg: ').replace('Type_', 'Type: ')),
+              x: featImp.map(f => Number(f.importance_pct)),
+              text: featImp.map(f => `${Number(f.importance_pct).toFixed(1)}%`),
+              textposition: 'outside',
+              cliponaxis: false,
+              marker: { color: '#1e3a8a' },
+              hovertemplate: '%{y}<br>Global Importance: %{text}<extra></extra>',
+            }], makeLayout({
+              margin: { t: 18, r: 52, b: 36, l: 135 },
+              xaxis: { type: 'linear', range: [0, maxImp * 1.28], ticksuffix: '%' },
+              yaxis: { type: 'category' },
+            }), { displayModeBar: false, responsive: true });
+          }
+        }
+
+        // Render Section 2: Holdout Residual & Error Slice Analysis
+        const ra = data.residual_analysis || {};
+        const findingEl = document.getElementById('system-residual-finding');
+        if (findingEl && ra.key_finding) {
+          findingEl.textContent = ra.key_finding;
+        }
+
+        const resPts = ra.residuals_vs_predicted || [];
+        if (resPts.length > 0 && document.getElementById('system-chart-residuals-scatter')) {
+          const maxPred = Math.min(4500000, Math.max(...resPts.map(p => Number(p.predicted)), 2500000));
+          Plotly.newPlot('system-chart-residuals-scatter', [
+            {
+              name: 'Holdout Residual (y - ŷ)',
+              type: 'scatter',
+              mode: 'markers',
+              x: resPts.map(p => Number(p.predicted)),
+              y: resPts.map(p => Number(p.residual)),
+              text: resPts.map(p => `${p.suburb} (${p.rooms} Bed ${p.type})<br>Actual: ${fmtMoney(p.actual)} | Pred: ${fmtMoney(p.predicted)}<br>Residual: ${fmtMoney(p.residual)} (${p.pct_error}%)`),
+              hoverinfo: 'text',
+              marker: { size: 5.5, opacity: 0.65, color: '#1e3a8a' },
+            },
+            {
+              name: 'Zero Error (y = ŷ)',
+              type: 'scatter',
+              mode: 'lines',
+              x: [100000, maxPred],
+              y: [0, 0],
+              line: { color: '#dc2626', width: 2, dash: 'dash' },
+              hoverinfo: 'skip',
+            },
+          ], makeLayout({
+            margin: { t: 26, r: 16, b: 44, l: 68 },
+            legend: { orientation: 'h', y: 1.15, font: { size: 10 } },
+            xaxis: { type: 'linear', title: 'Predicted Price (ŷ)', tickprefix: '$' },
+            yaxis: { type: 'linear', title: 'Residual (y - ŷ)', tickprefix: '$' },
+          }), { displayModeBar: false, responsive: true });
+        }
+
+        const pbRows = ra.by_price_band || [];
+        if (pbRows.length > 0 && document.getElementById('system-chart-error-price-band')) {
+          const maxPbMae = Math.max(...pbRows.map(b => Number(b.MAE)), 300000);
+          Plotly.newPlot('system-chart-error-price-band', [
+            {
+              name: 'Holdout MAE ($)',
+              type: 'bar',
+              x: pbRows.map(b => b.price_band),
+              y: pbRows.map(b => Number(b.MAE)),
+              text: pbRows.map(b => `${fmtMoney(b.MAE)} (${b.MAPE}%)`),
+              textposition: 'outside',
+              cliponaxis: false,
+              marker: { color: ['#15803d', '#2563eb', '#1e3a8a', '#d97706', '#dc2626'] },
+              hovertemplate: '%{x}<br>Holdout MAE: %{text}<extra></extra>',
+            },
+          ], makeLayout({
+            margin: { t: 28, r: 18, b: 56, l: 65 },
+            xaxis: { type: 'category', tickangle: -18 },
+            yaxis: { type: 'linear', range: [0, maxPbMae * 1.28], tickprefix: '$', title: 'Holdout MAE ($)' },
+          }), { displayModeBar: false, responsive: true });
+        }
+
+        const regSlices = (ra.by_region || []).slice(0, 5);
+        const typeSlices = ra.by_dwelling_type || [];
+        if ((regSlices.length > 0 || typeSlices.length > 0) && document.getElementById('system-chart-error-region-type')) {
+          const combinedLabels = [
+            ...typeSlices.map(t => `Type: ${t.type_code.toUpperCase()}`),
+            ...regSlices.map(r => r.region.replace(' Metropolitan', ' Metro').replace(' Victoria', ' Vic')),
+          ];
+          const combinedMaes = [
+            ...typeSlices.map(t => Math.round(Number(t.MAE))),
+            ...regSlices.map(r => Math.round(Number(r.MAE))),
+          ];
+          const combinedMapes = [
+            ...typeSlices.map(t => Number(t.MAPE).toFixed(1)),
+            ...regSlices.map(r => Number(r.MAPE).toFixed(1)),
+          ];
+          const maxCombinedMae = Math.max(...combinedMaes, 200000);
+          Plotly.newPlot('system-chart-error-region-type', [
+            {
+              name: 'Holdout MAE ($)',
+              type: 'bar',
+              x: combinedLabels,
+              y: combinedMaes,
+              text: combinedMaes.map((v, i) => `${fmtMoney(v)} (${combinedMapes[i]}%)`),
+              textposition: 'outside',
+              cliponaxis: false,
+              marker: { color: combinedLabels.map((_, i) => (i < typeSlices.length ? '#15803d' : '#1e3a8a')) },
+              hovertemplate: '%{x}<br>MAE (MAPE): %{text}<extra></extra>',
+            },
+          ], makeLayout({
+            margin: { t: 28, r: 18, b: 64, l: 65 },
+            xaxis: { type: 'category', tickangle: -24 },
+            yaxis: { type: 'linear', range: [0, maxCombinedMae * 1.28], tickprefix: '$', title: 'Holdout MAE ($)' },
+          }), { displayModeBar: false, responsive: true });
+        }
+      } finally {
+        if (spin && icon) setTimeout(() => icon.classList.remove('fa-spin'), 400);
+      }
+    }
+
+    async function loadETLTable(tableName) {
+      document.querySelectorAll('.etl-tbl-btn').forEach(btn => {
+        if (btn.getAttribute('data-table') === tableName) {
+          btn.classList.add('table-btn-active');
+        } else {
+          btn.classList.remove('table-btn-active');
+        }
+      });
+
+      const res = await fetch(`/api/etl?table=${encodeURIComponent(tableName)}`);
+      const data = await res.json();
+      const cm = data.etl_metadata?.cleaning_metrics || {};
+      const dq = data.etl_metadata?.data_quality_audit || {};
+      const physAnomalies = cm.total_physical_anomalies_corrected || 504;
+      const priceOutliers = cm.price_outliers_removed || 57;
+      const exactDups = cm.exact_duplicates_removed || 3;
+      const overlaps = cm.overlapping_records_merged || 26187;
+
+      document.getElementById('etl-summary-cards').innerHTML = `
+        <div class="p-3 rounded-lg bg-stone-50 border border-stone-200">
+          <div class="text-[11px] text-stone-500">Source Records Read</div>
+          <div class="text-base font-bold text-stone-900">${(cm.total_raw_records_processed || 97880).toLocaleString()}</div>
+          <div class="text-[10px] text-stone-500">63,023 LESS + 34,857 FULL</div>
+        </div>
+        <div class="p-3 rounded-lg bg-stone-50 border border-stone-200">
+          <div class="text-[11px] text-stone-500">Duplicates &amp; Overlaps</div>
+          <div class="text-base font-bold text-stone-900">${exactDups} Dups / ${overlaps.toLocaleString()} Merged</div>
+          <div class="text-[10px] text-stone-500">2 LESS + 1 FULL exact dups</div>
+        </div>
+        <div class="p-3 rounded-lg bg-stone-50 border border-stone-200">
+          <div class="text-[11px] text-stone-500">Validated Sales</div>
+          <div class="text-base font-bold text-emerald-800">${(cm.cleaned_priced_sales || 27192).toLocaleString()}</div>
+          <div class="text-[10px] text-stone-500">Fact_PropertySale (0 nulls)</div>
+        </div>
+        <div class="p-3 rounded-lg bg-stone-50 border border-stone-200">
+          <div class="text-[11px] text-stone-500">Unpriced Appraised</div>
+          <div class="text-base font-bold text-blue-900">${(cm.unseen_properties_for_prediction || 7607).toLocaleString()}</div>
+          <div class="text-[10px] text-stone-500">Fact_UnseenProperty</div>
+        </div>
+        <div class="p-3 rounded-lg bg-stone-50 border border-stone-200">
+          <div class="text-[11px] text-stone-500">Anomalies &amp; Outliers</div>
+          <div class="text-base font-bold text-amber-900">${physAnomalies} Fixed + ${priceOutliers} Dropped</div>
+          <div class="text-[10px] text-stone-500">${physAnomalies + priceOutliers} total rules triggered</div>
+        </div>
+        <div class="p-3 rounded-lg bg-stone-50 border border-stone-200">
+          <div class="text-[11px] text-stone-500">Train (80%) / Test (20%)</div>
+          <div class="text-base font-bold text-stone-900">${(cm.train_split_rows || 21753).toLocaleString()} / ${(cm.test_split_rows || 5439).toLocaleString()}</div>
+          <div class="text-[10px] text-stone-500">Split before imputation</div>
+        </div>
+      `;
+
+      const outBadge = document.getElementById('etl-outlier-badge');
+      if (outBadge) {
+        outBadge.textContent = `${physAnomalies + priceOutliers} Total Handled (${physAnomalies} Fixed, ${priceOutliers} Dropped)`;
+      }
+
+      const dispRows = dq.rows_dropped_and_separated || [];
+      const dispTbody = document.getElementById('etl-disposition-tbody');
+      if (dispTbody && dispRows.length > 0) {
+        dispTbody.innerHTML = dispRows.map(r => {
+          const isDrop = String(r.disposition).includes('Dropped');
+          const isRetain = String(r.disposition).includes('Retained');
+          const pillCls = isDrop
+            ? 'bg-red-50 text-red-800 border-red-200'
+            : (isRetain ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-blue-50 text-blue-900 border-blue-200');
+          return `
+            <tr class="hover:bg-stone-50">
+              <td class="py-1.5 px-3 font-medium text-stone-900">${r.stage}</td>
+              <td class="py-1.5 px-2.5 text-right font-semibold text-stone-900 whitespace-nowrap">${Number(r.record_count).toLocaleString()}</td>
+              <td class="py-1.5 px-2.5 whitespace-nowrap">
+                <span class="px-1.5 py-0.5 rounded border text-[10px] font-medium ${pillCls}">${r.disposition}</span>
+              </td>
+              <td class="py-1.5 px-3 text-stone-600">${r.reason}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      const outRules = dq.outlier_rules_applied || [];
+      const outTbody = document.getElementById('etl-outliers-tbody');
+      if (outTbody && outRules.length > 0) {
+        outTbody.innerHTML = outRules.map(r => `
+          <tr class="hover:bg-stone-50">
+            <td class="py-1.5 px-3 font-medium text-stone-900 whitespace-nowrap">${r.feature}</td>
+            <td class="py-1.5 px-2.5 font-mono text-[10px] text-amber-950 bg-amber-50/40 whitespace-nowrap">${r.threshold_rule}</td>
+            <td class="py-1.5 px-2.5 text-right font-semibold text-stone-900 whitespace-nowrap">${Number(r.rows_affected).toLocaleString()}</td>
+            <td class="py-1.5 px-3 text-stone-600">${r.action_taken}</td>
+          </tr>
+        `).join('');
+      }
+
+      const missRows = dq.missing_values_by_column || [];
+      const missTbody = document.getElementById('etl-missing-tbody');
+      if (missTbody && missRows.length > 0) {
+        missTbody.innerHTML = missRows.map(c => {
+          const hasMiss = Number(c.raw_full_missing) > 0 || Number(c.pre_imputation_priced_missing) > 0;
+          return `
+            <tr class="hover:bg-stone-50 ${hasMiss ? 'bg-amber-50/20' : ''}">
+              <td class="py-1.5 px-2.5 font-semibold text-stone-900 whitespace-nowrap">${c.column}</td>
+              <td class="py-1.5 px-2 text-right whitespace-nowrap ${c.raw_full_missing > 0 ? 'text-amber-900 font-semibold' : 'text-stone-400'}">
+                ${Number(c.raw_full_missing).toLocaleString()} (${Number(c.raw_full_missing_pct).toFixed(1)}%)
+              </td>
+              <td class="py-1.5 px-2 text-right whitespace-nowrap ${c.pre_imputation_priced_missing > 0 ? 'text-blue-950 font-semibold' : 'text-stone-400'}">
+                ${Number(c.pre_imputation_priced_missing).toLocaleString()} (${Number(c.pre_imputation_priced_pct).toFixed(1)}%)
+              </td>
+              <td class="py-1.5 px-2 text-right whitespace-nowrap font-semibold text-emerald-800">
+                ${Number(c.post_cleaning_priced_missing)}
+              </td>
+              <td class="py-1.5 px-2.5 text-stone-600">${c.imputation_rule}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      const encRows = dq.encoding_and_scaling_scheme || [];
+      const encTbody = document.getElementById('etl-encoding-tbody');
+      if (encTbody && encRows.length > 0) {
+        encTbody.innerHTML = encRows.map(e => `
+          <tr class="hover:bg-stone-50">
+            <td class="py-2 px-2.5 font-semibold text-stone-900">
+              <div>${e.feature_group}</div>
+              <div class="text-[10px] font-normal text-stone-500 mt-0.5">${e.columns}</div>
+            </td>
+            <td class="py-2 px-2.5 text-blue-950 font-medium">${e.encoding_method}</td>
+            <td class="py-2 px-2.5 text-emerald-900">${e.leakage_safeguard}</td>
+          </tr>
+        `).join('');
+      }
+
+      const rows = data.sample_rows || [];
+      if (!rows.length) return;
+      const cols = Object.keys(rows[0]);
+      document.getElementById('etl-thead').innerHTML = `<tr>${cols.map(c => `<th class="py-2 px-3">${c}</th>`).join('')}</tr>`;
+      document.getElementById('etl-tbody').innerHTML = rows.map(r => `
+        <tr class="hover:bg-stone-50">
+          ${cols.map(c => `<td class="py-2 px-3 whitespace-nowrap">${r[c] !== null ? r[c] : ''}</td>`).join('')}
+        </tr>
+      `).join('');
+    }
+
+    async function runETLLive() {
+      const btn = document.getElementById('btn-etl-run');
+      const old = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Running...</span>`;
+      try {
+        await fetch('/api/etl/run', { method: 'POST' });
+        await loadETLTable('Fact_PropertySale');
+        await refreshStatus(true);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = old;
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      ['chart-why-price', 'chart-four-models', 'bi-chart-regional', 'bi-chart-trend', 'bi-chart-scatter', 'bi-chart-error-type-rooms', 'system-chart-r2', 'system-chart-errors', 'system-chart-feature-importance', 'system-chart-residuals-scatter', 'system-chart-error-price-band', 'system-chart-error-region-type'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.data && el.offsetParent !== null) {
+          Plotly.Plots.resize(el);
+        }
+      });
+    });
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

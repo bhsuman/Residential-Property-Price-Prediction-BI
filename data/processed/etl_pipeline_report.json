@@ -1,0 +1,677 @@
+{
+  "status": "COMPLETED",
+  "last_run": "2026-10-28 10:59:49",
+  "duration_seconds": 6.61,
+  "source_files": [
+    {
+      "name": "melbourne_house_prices_less.csv",
+      "raw_rows": 63023,
+      "raw_cols": 13,
+      "duplicates_removed": 2,
+      "deduplicated_rows": 63021,
+      "description": "Broad Melbourne transaction log (2016\u20132018) across 380 suburbs with complete location metadata."
+    },
+    {
+      "name": "melbourne_housing_full.csv",
+      "raw_rows": 34857,
+      "raw_cols": 21,
+      "duplicates_removed": 1,
+      "deduplicated_rows": 34856,
+      "description": "Detailed property physical & spatial attributes (Bedrooms, Bathrooms, Car, Landsize, BuildingArea, YearBuilt, Lat/Long)."
+    }
+  ],
+  "cleaning_metrics": {
+    "total_raw_records_processed": 97880,
+    "less_duplicates_removed": 2,
+    "full_duplicates_removed": 1,
+    "exact_duplicates_removed": 3,
+    "overlapping_records_merged": 34855,
+    "location_metadata_backfilled": 11,
+    "prices_backfilled_across_files": 2,
+    "anomalies_corrected": {
+      "YearBuilt_anomalies": 5,
+      "BuildingArea_anomalies": 167,
+      "Landsize_anomalies": 258,
+      "Room_Bath_Car_anomalies": 74
+    },
+    "total_physical_anomalies_corrected": 504,
+    "price_outliers_removed": 57,
+    "price_low_outliers_removed": 2,
+    "price_high_outliers_removed": 55,
+    "price_upper_threshold_998pct": 5043024.0,
+    "total_anomalies_and_outliers_handled": 561,
+    "cleaned_priced_sales": 27192,
+    "unseen_properties_for_prediction": 7607,
+    "train_split_rows": 21753,
+    "test_split_rows": 5439
+  },
+  "data_quality_audit": {
+    "duplicates_audit": {
+      "less_csv_raw_rows": 63023,
+      "less_csv_exact_duplicates_removed": 2,
+      "less_csv_deduplicated_rows": 63021,
+      "full_csv_raw_rows": 34857,
+      "full_csv_exact_duplicates_removed": 1,
+      "full_csv_deduplicated_rows": 34856,
+      "total_exact_duplicates_removed": 3,
+      "cross_csv_overlapping_keys_matched": 34855,
+      "unique_extra_market_rows_from_less": 28166,
+      "composite_match_key": "Suburb | Address | Rooms | Type | Date | Method | SellerG"
+    },
+    "missing_values_by_column": [
+      {
+        "column": "Suburb",
+        "present_in_less_csv": true,
+        "raw_full_missing": 0,
+        "raw_full_missing_pct": 0.0,
+        "raw_less_missing": 0,
+        "raw_less_missing_pct": 0.0,
+        "pre_imputation_priced_missing": 0,
+        "pre_imputation_priced_pct": 0.0,
+        "post_cleaning_priced_missing": 0,
+        "post_cleaning_unseen_missing": 0,
+        "imputation_rule": "No missing values in raw FULL or LESS CSVs."
+      },
+      {
+        "column": "Address",
+        "present_in_less_csv": true,
+        "raw_full_missing": 0,
+        "raw_full_missing_pct": 0.0,
+        "raw_less_missing": 0,
+        "raw_less_missing_pct": 0.0,
+        "pre_imputation_priced_missing": 0,
+        "pre_imputation_priced_pct": 0.0,
+        "post_cleaning_priced_missing": 0,
+        "post_cleaning_unseen_missing": 0,
+        "imputation_rule": "No missing values in raw FULL or LESS CSVs."
+      },
+      {
+        "column": "Rooms",
+        "present_in_less_csv": true,
+        "raw_full_missing": 0,
+        "raw_full_missing_pct": 0.0,
+        "raw_less_missing": 0,
+        "raw_less_missing_pct": 0.0,
+        "pre_imputation_priced_missing": 0,
+        "pre_imputation_priced_pct": 0.0,
+        "post_cleaning_priced_missing": 0,
+        "post_cleaning_unseen_missing": 0,
+        "imputation_rule": "No missing values in raw CSVs; clipped to [1, 10]."
+      },
+      {
+        "column": "Type",
+        "present_in_less_csv": true,
+        "raw_full_missing": 0,
+        "raw_full_missing_pct": 0.0,
+        "raw_less_missing": 0,
+        "raw_less_missing_pct": 0.0,
+        "pre_imputation_priced_missing": 0,
+        "pre_imputation_priced_pct": 0.0,
+        "post_cleaning_priced_missing": 0,
+        "post_cleaning_unseen_missing": 0,
+        "imputation_rule": "No missing values in raw CSVs (h = House, u = Unit, t = Townhouse)."
+      },
+      {
+        "column": "Price",
+        "present_in_less_csv": true,
+        "raw_full_missing": 7610,
+        "raw_full_missing_pct": 21.83,
+        "raw_less_missing": 14590,
+        "raw_less_missing_pct": 23.15,
+        "pre_imputation_priced_missing": 0,
+        "pre_imputation_priced_pct": 0.0,
+        "post_cleaning_priced_missing": 0,
+        "post_cleaning_unseen_missing": 7607,
+        "imputation_rule": "Target variable: 2 backfilled from LESS via 7-key composite match; 7,607 remaining unpriced routed to Fact_UnseenProperty."
+      },
+      {
+        "column": "Method",
+        "present_in_less_csv": true,
+        "raw_full_missing": 0,
+        "raw_full_missing_pct": 0.0,
+        "raw_less_missing": 0,
+        "raw_less_missing_pct": 0.0,
+        "pre_imputation_priced_missing": 0,
+        "pre_imputation_priced_pct": 0.0,
+        "post_cleaning_priced_missing": 0,
+        "post_cleaning_unseen_missing": 0,
+        "imputation_rule": "No missing values in raw CSVs (S, SP, PI, VB, SA)."
+      },
+      {
+        "column": "SellerG",
+        "present_in_less_csv": true,
+        "raw_full_missing": 0,
+        "raw_full_missing_pct": 0.0,
+        "raw_less_missing": 0,
+        "raw_less_missing_pct": 0.0,
+        "pre_imputation_priced_missing": 0,
+        "pre_imputation_priced_pct": 0.0,
+        "post_cleaning_priced_missing": 0,
+        "post_cleaning_unseen_missing": 0,
+        "imputation_rule": "No missing values in raw CSVs."
+      },
+      {
+        "column": "Date",
+        "present_in_less_csv": true,
+        "raw_full_missing": 0,
+        "raw_full_missing_pct": 0.0,
+        "raw_less_missing": 0,
+        "raw_less_missing_pct": 0.0,
+        "pre_imputation_priced_missing": 0,
+        "pre_imputation_priced_pct": 0.0,
+        "post_cleaning_priced_missing": 0,
+        "post_cleaning_unseen_missing": 0,
+        "imputation_rule": "Parsed via dayfirst ISO date parser (YYYY-MM-DD)."
+      },
+      {
+        "column": "Distance",
+        "present_in_less_csv": true,
+        "raw_full_missing": 1,
+        "raw_full_missing_pct": 0.0,
+        "raw_less_missing": 0,
+        "raw_less_missing_pct": 0.0,
+        "pre_imputation_priced_missing": 1,
+        "pre_imputation_priced_pct": 0.0,
+        "post_cleaning_priced_missing": 0,
+        "post_cleaning_unseen_missing": 0,
+        "imputation_rule": "Backfilled from LESS suburb lookup; any remaining filled via Train global median."
+      },
+      {
+        "column": "Postcode",
+        "present_in_less_csv": true,
+        "raw_full_missing": 1,
+        "raw_full_missing_pct": 0.0,
+        "raw_less_missing": 0,
+        "raw_less_missing_pct": 0.0,
+        "pre_imputation_priced_missing": 1,
+        "pre_imputation_priced_pct": 0.0,
+        "post_cleaning_priced_missing": 0,
+        "post_cleaning_unseen_missing": 0,
+        "imputation_rule": "Backfilled from LESS suburb lookup."
+      },
+      {
+        "column": "Bedroom2",
+        "present_in_less_csv": false,
+        "raw_full_missing": 8217,
+        "raw_full_missing_pct": 23.57,
+        "raw_less_missing": null,
+        "raw_less_missing_pct": null,
+        "pre_imputation_priced_missing": 6428,
+        "pre_imputation_priced_pct": 23.64,
+        "post_cleaning_priced_missing": 0,
+        "post_cleaning_unseen_missing": 0,
+        "imputation_rule": "Missing/invalid replaced with Rooms count clipped to [1, 10]."
+      },
+      {
+        "column": "Bathroom",
+        "present_in_less_csv": false,
+        "raw_full_missing": 8226,
+        "raw_full_missing_pct": 23.6,
+        "raw_less_missing": null,
+        "raw_less_missing_pct": null,
+        "pre_imputation_priced_missing": 6469,
+        "pre_imputation_priced_pct": 23.79,
+        "post_cleaning_priced_missing": 0,
+        "post_cleaning_unseen_missing": 0,
+        "imputation_rule": "Train-only (Type, Rooms) median imputation fallback to Train global median."
+      },
+      {
+        "column": "Car",
+        "present_in_less_csv": false,
+        "raw_full_missing": 8728,
+        "raw_full_missing_pct": 25.04,
+        "raw_less_missing": null,
+        "raw_less_missing_pct": null,
+        "pre_imputation_priced_missing": 6813,
+        "pre_imputation_priced_pct": 25.06,
+        "post_cleaning_priced_missing": 0,
+        "post_cleaning_unseen_missing": 0,
+        "imputation_rule": "Train-only (Type, Rooms) median imputation fallback to Train global median."
+      },
+      {
+        "column": "Landsize",
+        "present_in_less_csv": false,
+        "raw_full_missing": 11810,
+        "raw_full_missing_pct": 33.88,
+        "raw_less_missing": null,
+        "raw_less_missing_pct": null,
+        "pre_imputation_priced_missing": 9415,
+        "pre_imputation_priced_pct": 34.62,
+        "post_cleaning_priced_missing": 0,
+        "post_cleaning_unseen_missing": 0,
+        "imputation_rule": "4-tier Train-only median (Suburb\u00d7Type\u00d7Rooms \u2192 Suburb\u00d7Type \u2192 Region\u00d7Type \u2192 Type) + Landsize_was_imputed flag."
+      },
+      {
+        "column": "BuildingArea",
+        "present_in_less_csv": false,
+        "raw_full_missing": 21115,
+        "raw_full_missing_pct": 60.58,
+        "raw_less_missing": null,
+        "raw_less_missing_pct": null,
+        "pre_imputation_priced_missing": 16701,
+        "pre_imputation_priced_pct": 61.42,
+        "post_cleaning_priced_missing": 0,
+        "post_cleaning_unseen_missing": 0,
+        "imputation_rule": "5-tier Train-only median (Suburb\u00d7Type\u00d7Rooms \u2192 Suburb\u00d7Type \u2192 Region\u00d7Type\u00d7Rooms \u2192 Type\u00d7Rooms \u2192 Type) + BuildingArea_was_imputed flag."
+      },
+      {
+        "column": "YearBuilt",
+        "present_in_less_csv": false,
+        "raw_full_missing": 19306,
+        "raw_full_missing_pct": 55.39,
+        "raw_less_missing": null,
+        "raw_less_missing_pct": null,
+        "pre_imputation_priced_missing": 15140,
+        "pre_imputation_priced_pct": 55.68,
+        "post_cleaning_priced_missing": 0,
+        "post_cleaning_unseen_missing": 0,
+        "imputation_rule": "3-tier Train-only median (Suburb\u00d7Type \u2192 Suburb \u2192 Region) + YearBuilt_was_imputed flag."
+      },
+      {
+        "column": "CouncilArea",
+        "present_in_less_csv": true,
+        "raw_full_missing": 3,
+        "raw_full_missing_pct": 0.01,
+        "raw_less_missing": 0,
+        "raw_less_missing_pct": 0.0,
+        "pre_imputation_priced_missing": 1,
+        "pre_imputation_priced_pct": 0.0,
+        "post_cleaning_priced_missing": 0,
+        "post_cleaning_unseen_missing": 0,
+        "imputation_rule": "Backfilled from LESS suburb lookup; fallback to Train mode."
+      },
+      {
+        "column": "Lattitude",
+        "present_in_less_csv": false,
+        "raw_full_missing": 7976,
+        "raw_full_missing_pct": 22.88,
+        "raw_less_missing": null,
+        "raw_less_missing_pct": null,
+        "pre_imputation_priced_missing": 6241,
+        "pre_imputation_priced_pct": 22.95,
+        "post_cleaning_priced_missing": 0,
+        "post_cleaning_unseen_missing": 0,
+        "imputation_rule": "2-tier Train-only spatial median (Suburb \u2192 Region \u2192 Melbourne CBD)."
+      },
+      {
+        "column": "Longtitude",
+        "present_in_less_csv": false,
+        "raw_full_missing": 7976,
+        "raw_full_missing_pct": 22.88,
+        "raw_less_missing": null,
+        "raw_less_missing_pct": null,
+        "pre_imputation_priced_missing": 6241,
+        "pre_imputation_priced_pct": 22.95,
+        "post_cleaning_priced_missing": 0,
+        "post_cleaning_unseen_missing": 0,
+        "imputation_rule": "2-tier Train-only spatial median (Suburb \u2192 Region \u2192 Melbourne CBD)."
+      },
+      {
+        "column": "Regionname",
+        "present_in_less_csv": true,
+        "raw_full_missing": 3,
+        "raw_full_missing_pct": 0.01,
+        "raw_less_missing": 0,
+        "raw_less_missing_pct": 0.0,
+        "pre_imputation_priced_missing": 1,
+        "pre_imputation_priced_pct": 0.0,
+        "post_cleaning_priced_missing": 0,
+        "post_cleaning_unseen_missing": 0,
+        "imputation_rule": "Backfilled from LESS suburb lookup; fallback to Train mode."
+      },
+      {
+        "column": "Propertycount",
+        "present_in_less_csv": true,
+        "raw_full_missing": 3,
+        "raw_full_missing_pct": 0.01,
+        "raw_less_missing": 0,
+        "raw_less_missing_pct": 0.0,
+        "pre_imputation_priced_missing": 1,
+        "pre_imputation_priced_pct": 0.0,
+        "post_cleaning_priced_missing": 0,
+        "post_cleaning_unseen_missing": 0,
+        "imputation_rule": "Backfilled from LESS suburb lookup; fallback to Train median."
+      }
+    ],
+    "outlier_rules_applied": [
+      {
+        "feature": "Price (Lower Tail)",
+        "threshold_rule": "Price < $120,000",
+        "action_taken": "Dropped from Fact_PropertySale (nominal / non-arm's-length transfers)",
+        "rows_affected": 2
+      },
+      {
+        "feature": "Price (Upper 99.8th Percentile)",
+        "threshold_rule": "Price > $5,043,024 (99.8th percentile)",
+        "action_taken": "Dropped from Fact_PropertySale (extreme luxury tail outliers)",
+        "rows_affected": 55
+      },
+      {
+        "feature": "YearBuilt (Entry Typos)",
+        "threshold_rule": "YearBuilt == 1196 or YearBuilt == 2106",
+        "action_taken": "Corrected in-place (1196 \u2192 1996, 2106 \u2192 2016)",
+        "rows_affected": 2
+      },
+      {
+        "feature": "YearBuilt (Implausible Era)",
+        "threshold_rule": "YearBuilt < 1835 or YearBuilt > 2019",
+        "action_taken": "Masked to NaN \u2192 Train-only Suburb\u00d7Type median + YearBuilt_was_imputed=1",
+        "rows_affected": 3
+      },
+      {
+        "feature": "BuildingArea (Zero / Extreme Floor Area)",
+        "threshold_rule": "BuildingArea < 15 sqm or BuildingArea > 1,500 sqm",
+        "action_taken": "Masked to NaN \u2192 5-tier Train-only hierarchical median + BuildingArea_was_imputed=1",
+        "rows_affected": 167
+      },
+      {
+        "feature": "Landsize (Zero-Land Houses)",
+        "threshold_rule": "Landsize <= 0 sqm and Type == 'h' (House)",
+        "action_taken": "Masked to NaN \u2192 4-tier Train-only hierarchical median + Landsize_was_imputed=1",
+        "rows_affected": 222
+      },
+      {
+        "feature": "Landsize (Extreme Acreage)",
+        "threshold_rule": "Landsize > 15,000 sqm",
+        "action_taken": "Winsorized (capped) at 15,000 sqm",
+        "rows_affected": 36
+      },
+      {
+        "feature": "Bedroom2 (Invalid Count)",
+        "threshold_rule": "Bedroom2 <= 0 or Bedroom2 > 10",
+        "action_taken": "Replaced with Rooms count clipped to [1, 10]",
+        "rows_affected": 21
+      },
+      {
+        "feature": "Bathroom (Invalid Count)",
+        "threshold_rule": "Bathroom <= 0 or Bathroom > 8",
+        "action_taken": "Masked to NaN \u2192 Train-only (Type, Rooms) median",
+        "rows_affected": 48
+      },
+      {
+        "feature": "Car (Invalid Count)",
+        "threshold_rule": "Car < 0 or Car > 10",
+        "action_taken": "Masked to NaN \u2192 Train-only (Type, Rooms) median",
+        "rows_affected": 5
+      }
+    ],
+    "rows_dropped_and_separated": [
+      {
+        "stage": "1. Raw Source Records Ingested (LESS + FULL)",
+        "record_count": 97880,
+        "disposition": "Input",
+        "reason": "63,023 rows in melbourne_house_prices_less.csv + 34,857 rows in melbourne_housing_full.csv."
+      },
+      {
+        "stage": "2. Exact Duplicate Rows in LESS CSV",
+        "record_count": 2,
+        "disposition": "Dropped",
+        "reason": "Identical duplicate rows across all 13 columns in melbourne_house_prices_less.csv."
+      },
+      {
+        "stage": "3. Exact Duplicate Rows in FULL CSV",
+        "record_count": 1,
+        "disposition": "Dropped",
+        "reason": "Identical duplicate row across all 21 columns in melbourne_housing_full.csv."
+      },
+      {
+        "stage": "4. Cross-CSV Overlapping Transactions (LESS \u2229 FULL)",
+        "record_count": 34855,
+        "disposition": "Merged / Deduplicated",
+        "reason": "Matched via 7-field RecordKey to backfill 2 missing prices and 11 missing location attributes in FULL without double-counting."
+      },
+      {
+        "stage": "5. LESS-Only Transactions (Macro Market Benchmark)",
+        "record_count": 28166,
+        "disposition": "Routed to Dim_Market",
+        "reason": "Lacks physical property attributes (Bedrooms, Bathrooms, Landsize, BuildingArea, YearBuilt, Lat/Long); used strictly for past-only regional/suburb market indices."
+      },
+      {
+        "stage": "6. Unpriced Listings in FULL (Missing Target Price)",
+        "record_count": 7607,
+        "disposition": "Routed to Fact_UnseenProperty",
+        "reason": "Listings with no recorded sale price after cross-CSV lookup; separated for out-of-sample valuation scoring (never used in training)."
+      },
+      {
+        "stage": "7. Extreme Price Tail Outliers (< $120k or > 99.8th pct)",
+        "record_count": 57,
+        "disposition": "Dropped",
+        "reason": "Removed 2 nominal transfers (< $120,000) and 55 extreme luxury outliers (> $5,043,024) to stabilize regression loss."
+      },
+      {
+        "stage": "8. Final Validated Sales (Fact_PropertySale)",
+        "record_count": 27192,
+        "disposition": "Retained (21,753 Train / 5,439 Test)",
+        "reason": "Clean, complete residential sales split 80% Train (21,753) and 20% Holdout Test (5,439) prior to imputation and target encoding."
+      }
+    ],
+    "encoding_and_scaling_scheme": [
+      {
+        "feature_group": "Target Variable (Price)",
+        "columns": "Price ($ AUD)",
+        "encoding_method": "Log1p Transformation \u2014 TransformedTargetRegressor(func=np.log1p, inverse_func=np.expm1)",
+        "leakage_safeguard": "Invertible monotonic transformation; predictions evaluated in original AUD dollars."
+      },
+      {
+        "feature_group": "High-Cardinality Location (350 Suburbs)",
+        "columns": "SuburbTargetEncoded, SuburbTypeTargetEncoded, SuburbTypeRoomsTargetEncoded",
+        "encoding_method": "3-Tier Empirical Bayes (m-estimate) Target Encoding in log1p(Price) space (m = 10, 8, 6)",
+        "leakage_safeguard": "Computed strictly Out-of-Fold (5-fold KFold) within Train set; Test & Unseen mapped from full-Train encoder only."
+      },
+      {
+        "feature_group": "Categorical Attributes (4 Columns \u2192 49 One-Hot Cols)",
+        "columns": "Type (3), Method (5), Regionname (8), CouncilArea (33)",
+        "encoding_method": "OneHotEncoder(handle_unknown='ignore', sparse_output=False)",
+        "leakage_safeguard": "Fitted strictly on X_train inside sklearn ColumnTransformer pipeline."
+      },
+      {
+        "feature_group": "Continuous Physical, Spatial & Temporal Features (24 Cols)",
+        "columns": "Rooms, Bedroom2, Bathroom, Car, Landsize, BuildingArea, YearBuilt, PropertyAge, FloorToLandRatio, TotalUtilityRooms, Distance, RadialDistanceCBD, Lattitude, Longtitude, Propertycount, SaleYear, SaleQuarter, PriorSuburbMedianPrice, PriorPeriodMedianPrice, SuburbPremiumRatio, MarketIndex, QuarterTransactionVolume, ...",
+        "encoding_method": "SimpleImputer(strategy='median') + StandardScaler() (zero mean, unit variance)",
+        "leakage_safeguard": "Medians, means, and standard deviations fitted strictly on X_train; past-only chronological medians for market benchmarks."
+      },
+      {
+        "feature_group": "Missingness Indicator Flags (3 Binary Cols)",
+        "columns": "BuildingArea_was_imputed, YearBuilt_was_imputed, Landsize_was_imputed",
+        "encoding_method": "Binary {0, 1} indicators captured prior to imputation (Total model matrix = 76 dimensions)",
+        "leakage_safeguard": "Deterministic row-level missingness check recorded before hierarchical Train-only imputation."
+      }
+    ]
+  },
+  "star_schema_tables": {
+    "Fact_PropertySale": {
+      "rows": 27192,
+      "columns": [
+        "SaleKey",
+        "PropertyKey",
+        "LocationKey",
+        "DateKey",
+        "MarketKey",
+        "Method",
+        "SellerG",
+        "DataSplit",
+        "SalePrice",
+        "PredictedPrice",
+        "AbsoluteError",
+        "PercentageError",
+        "ValuationStatus",
+        "PredictedPrice_XGB",
+        "PredictedPrice_RF",
+        "PredictedPrice_DT",
+        "PredictedPrice_LR"
+      ],
+      "grain": "One completed residential property sale transaction"
+    },
+    "Dim_Property": {
+      "rows": 27192,
+      "columns": [
+        "PropertyKey",
+        "Address",
+        "PropertyType",
+        "PropertyTypeLabel",
+        "Rooms",
+        "Bedrooms",
+        "Bathrooms",
+        "CarSpaces",
+        "LandArea",
+        "FloorArea",
+        "YearBuilt",
+        "PropertyAge",
+        "FloorToLandRatio",
+        "BuildingArea_was_imputed",
+        "YearBuilt_was_imputed",
+        "Landsize_was_imputed"
+      ],
+      "grain": "One physical residential property profile"
+    },
+    "Dim_Location": {
+      "rows": 381,
+      "columns": [
+        "LocationKey",
+        "Suburb",
+        "CouncilArea",
+        "Region",
+        "Postcode",
+        "DistanceCBD",
+        "Latitude",
+        "Longitude",
+        "PropertyCount",
+        "PriorSuburbMedian"
+      ],
+      "grain": "One Melbourne suburb / postcode location profile"
+    },
+    "Dim_Date": {
+      "rows": 112,
+      "columns": [
+        "DateKey",
+        "Date",
+        "Day",
+        "Month",
+        "MonthName",
+        "Quarter",
+        "Year",
+        "YearQuarter"
+      ],
+      "grain": "One calendar transaction date"
+    },
+    "Dim_Market": {
+      "rows": 96,
+      "columns": [
+        "MarketKey",
+        "Region",
+        "YearQuarter",
+        "InterestRate",
+        "MarketIndex",
+        "PriorPeriodMedianPrice",
+        "CurrentQuarterMedianPrice",
+        "QuarterTransactionVolume"
+      ],
+      "grain": "One Region x Year-Quarter macro market indicator snapshot"
+    }
+  },
+  "steps_log": [
+    {
+      "timestamp": "2026-10-28 10:59:43",
+      "stage": "EXTRACT",
+      "title": "Ingest Dual CSV Datasets from data/raw/",
+      "details": "Loaded melbourne_house_prices_less.csv (63,023 rows, 13 cols) and melbourne_housing_full.csv (34,857 rows, 21 cols).",
+      "metrics": {
+        "less_rows": 63023,
+        "less_cols": 13,
+        "full_rows": 34857,
+        "full_cols": 21,
+        "total_raw_rows_ingested": 97880
+      }
+    },
+    {
+      "timestamp": "2026-10-28 10:59:44",
+      "stage": "TRANSFORM",
+      "title": "Cross-Dataset Integration & Deduplication",
+      "details": "Removed 3 exact duplicate rows (2 in LESS, 1 in FULL). Backfilled 11 missing location metadata values in FULL using LESS suburb lookup, and linked 28,166 additional market transactions from LESS.",
+      "metrics": {
+        "duplicates_removed": 3,
+        "location_fields_backfilled": 11,
+        "price_backfilled_from_less": 2,
+        "extra_less_transactions": 28166
+      }
+    },
+    {
+      "timestamp": "2026-10-28 10:59:44",
+      "stage": "CLEAN",
+      "title": "Outlier & Anomaly Detection and Normalization",
+      "details": "Corrected YearBuilt typos/outliers (5), invalid BuildingArea entries (167), Landsize anomalies (258), and Bedroom/Bathroom/Car extreme values (74).",
+      "metrics": {
+        "YearBuilt_anomalies": 5,
+        "BuildingArea_anomalies": 167,
+        "Landsize_anomalies": 258,
+        "Room_Bath_Car_anomalies": 74
+      }
+    },
+    {
+      "timestamp": "2026-10-28 10:59:46",
+      "stage": "TRANSFORM",
+      "title": "Compute Strictly Past-Only Macro & Suburb Market Indicators (Zero Leakage)",
+      "details": "Calculated chronological past-only Prior-Period Median Prices and Market Indices strictly from training and historical transactions (42,920 rows) occurring prior to each sale date.",
+      "metrics": {
+        "combined_priced_transactions": 42920,
+        "market_dimension_records": 96
+      }
+    },
+    {
+      "timestamp": "2026-10-28 10:59:46",
+      "stage": "CLEAN",
+      "title": "Train-Split Hierarchical Missing Value Imputation",
+      "details": "Separated 27,192 priced property sales and 7,607 unseen (unpriced) properties (filtered 57 extreme price outliers). Fitted 5-level hierarchical median imputers strictly on the 80% training split (21,753 rows) and added explicit *_was_imputed indicator flags.",
+      "metrics": {
+        "priced_sales_cleaned": 27192,
+        "unseen_properties_cleaned": 7607,
+        "price_outliers_removed": 57,
+        "building_area_imputed_count": 16701,
+        "year_built_imputed_count": 15140,
+        "landsize_imputed_count": 11185,
+        "remaining_nulls_in_priced": 0
+      }
+    },
+    {
+      "timestamp": "2026-10-28 10:59:48",
+      "stage": "FEATURE_ENGINEERING",
+      "title": "Engineer Time-Aware Hedonic, Spatial & Out-of-Fold Target Encoded Features",
+      "details": "Engineered PropertyAge, FloorToLandRatio, TotalUtilityRooms, RadialDistanceCBD, SaleYear, SaleQuarter, 5-fold Out-of-Fold Empirical Bayes SuburbTargetEncoded, SuburbTypeTargetEncoded & SuburbTypeRoomsTargetEncoded, strictly past-only PriorPeriodMedianPrice & PriorSuburbMedianPrice, SuburbPremiumRatio, MarketIndex, SuburbTypeMedianPrice, and *_was_imputed indicators.",
+      "metrics": {
+        "engineered_features": [
+          "PropertyAge",
+          "FloorToLandRatio",
+          "TotalUtilityRooms",
+          "RadialDistanceCBD",
+          "SaleYear",
+          "SaleQuarter",
+          "SuburbTargetEncoded",
+          "SuburbTypeTargetEncoded",
+          "SuburbTypeRoomsTargetEncoded",
+          "PriorPeriodMedianPrice",
+          "PriorSuburbMedianPrice",
+          "SuburbPremiumRatio",
+          "MarketIndex",
+          "SuburbTypeMedianPrice",
+          "BuildingArea_was_imputed",
+          "YearBuilt_was_imputed",
+          "Landsize_was_imputed"
+        ]
+      }
+    },
+    {
+      "timestamp": "2026-10-28 10:59:49",
+      "stage": "LOAD",
+      "title": "Populate SQLite Star Schema Data Warehouse",
+      "details": "Loaded Star Schema into property_star_schema.db in 6.61s: Fact_PropertySale (27,192 rows), Dim_Property (27,192 rows), Dim_Location (381 suburbs), Dim_Date (112 dates), Dim_Market (96 region-quarter records).",
+      "metrics": {
+        "Fact_PropertySale": 27192,
+        "Dim_Property": 27192,
+        "Dim_Location": 381,
+        "Dim_Date": 112,
+        "Dim_Market": 96,
+        "Unseen_Properties": 7607
+      }
+    }
+  ]
+}
