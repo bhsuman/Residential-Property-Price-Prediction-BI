@@ -1,5 +1,8 @@
 # Residential Property Price Prediction & BI Decision Support
 
+> **🚀 Live Demo:** [View the Live BI Dashboard on Render](https://residential-property-price-prediction-bi.onrender.com)
+*(Note: The free tier spins down after inactivity, so the initial page load may take 30–50 seconds to wake up).*
+
 ![Python](https://img.shields.io/badge/Python-3.11%2B-blue?logo=python&logoColor=white)
 ![XGBoost](https://img.shields.io/badge/ML-XGBoost%20Champion%20(81.9%25%20R%C2%B2)-emerald)
 ![Conformal](https://img.shields.io/badge/Uncertainty-Split%20Conformal%20(95.3%25%20Coverage)-blue)
