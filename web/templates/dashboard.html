@@ -1326,13 +1326,13 @@
           hovertemplate: '%{y}<br>Global Importance: %{text}<extra></extra>',
           marker: { color: ['#94a3b8', '#64748b', '#3b82f6', '#1d4ed8', '#1e3a8a'] },
         }], makeLayout({
-          margin: { t: 14, r: 65, b: 36, l: 135 },
+          margin: { t: 14, r: 65, b: 36, l: 150 },
           xaxis: {
             type: 'linear',
             range: [0, maxPct * 1.28],
             ticksuffix: '%',
           },
-          yaxis: { type: 'category' },
+          yaxis: { type: 'category', anchor: 'free', position: 0, automargin: true },
         }), { displayModeBar: false, responsive: true });
         return;
       }
@@ -1344,14 +1344,13 @@
       const netShap = deltas.reduce((acc, v) => acc + v, 0);
       if (subEl) {
         const signStr = netShap >= 0 ? '+' : '';
-        subEl.textContent = `TreeSHAP: Baseline E[f(X)] ${fmtMoney(baseVal)} ${signStr} ${fmtMoney(netShap)} Net SHAP = ${fmtMoney(data.predicted_price)}`;
+        subEl.textContent = `TreeSHAP: Baseline E[f(X)] ${fmtMoney(baseVal)} ${signStr} ${fmtMoney(netShap)} Net SHAP = ${fmtMoney(data.predicted_price)} • Amber: below-market discount (-), Navy: premium (+)`;
       }
 
       const maxPos = Math.max(...deltas, 50000);
       const minNeg = Math.min(...deltas, 0);
-      const span = Math.max(maxPos - minNeg, 100000);
-      const xMin = minNeg < 0 ? minNeg - span * 0.42 : 0;
-      const xMax = maxPos + span * 0.42;
+      const safeXMin = minNeg < 0 ? Math.min(minNeg * 1.45, minNeg - 50000) : -30000;
+      const safeXMax = maxPos > 0 ? Math.max(maxPos * 1.45, maxPos + 50000) : 100000;
 
       Plotly.newPlot('chart-why-price', [{
         type: 'bar',
@@ -1370,13 +1369,15 @@
           color: deltas.map(v => (v >= 0 ? '#1e3a8a' : '#d97706')),
         },
       }], makeLayout({
-        margin: { t: 14, r: 95, b: 36, l: 135 },
+        margin: { t: 14, r: 105, b: 36, l: 150 },
         xaxis: {
           type: 'linear',
-          range: [xMin, xMax],
+          range: [safeXMin, safeXMax],
           tickprefix: '$',
+          zerolinecolor: '#94a3b8',
+          zerolinewidth: 2,
         },
-        yaxis: { type: 'category' },
+        yaxis: { type: 'category', anchor: 'free', position: 0, automargin: true },
       }), { displayModeBar: false, responsive: true });
     }
 
